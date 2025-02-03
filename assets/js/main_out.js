@@ -1601,7 +1601,7 @@
 
         function updateActiveSkin(skinName) {
             const activeSkinDiv = document.getElementById('active_skin');
-            activeSkinDiv.style.backgroundImage = `url(${SKIN_URL}${skinName}.png)`;
+            activeSkinDiv.style.backgroundImage = `url(${skinName})`;
         }
 
         // Example function to set the active skin (you can replace this with your actual logic)
