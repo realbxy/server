@@ -64,7 +64,9 @@
         <div id="helloDialog">
             <form role="form">
                 <div class="form-group">
-                    <h2 id="title">MultiOgar Client</h2>
+                    <div id="skin_previews">
+                        <div id="active_skin" class="active"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <input id="nick" class="form-control save" data-box-id="0" placeholder="Nickname" maxlength="30" />
@@ -76,6 +78,9 @@
                     <br clear="both" />
                 </div>
                 <div class="form-group">
+                    <input id="skin_url" class="form-control" placeholder="Enter skin URL" />
+                </div>
+                <div class="form-group">
                     <div class="mb-10">
                         <a data-toggle="modal" data-target="#inPageModal" onclick="openSkinsList();" class="btn-primary btn btn-info" role="button" style="width: 100%;">Skins Gallery</a>
                     </div>
@@ -85,8 +90,7 @@
                 </div>
                 <div id="settings" class="checkbox" style="display:none;">
                     <div class="form-group" id="mainform">
-                        <button id="spectate-btn" onclick="spectate(); return false;" style="width: 100%" class="btn btn-warning btn-spectate btn-needs-server">Spectate
-                        </button>
+                        <button id="spectate-btn" onclick="spectate(); return false;" style="width: 100%" class="btn btn-warning btn-spectate btn-needs-server">Spectate</button>
                         <br clear="both" />
                     </div>
                     <div style="margin: 6px;">
@@ -137,28 +141,6 @@
             </form>
             <div id="instructions">
                 <hr/>
-                <center>
-                    <span class="text-muted">
-            			Move your <b>Mouse</b> to control your cell<br/>
-            			Press <b>Space</b> to split<br/>
-            			Press <b>W</b> to eject mass<br/>
-            			Press <b>E</b> to split minions<br/>
-            			Press <b>R</b> to make minions eject mass<br/>
-            			Press <b>T</b> to freeze/unfreeze minions<br/>
-            			Press <b>P</b> to make minions collect food<br/>
-            		    Press <b>Q</b> (in-game) to make minions follow your cell<br/>
-                	</span>
-                </center>
-            </div>
-            <div id="footer">
-                <hr/>
-                <!--Credits-->
-                <a href="https://github.com/agarian-2/MultiOgar" class="text-muted" target="_blank">GitHub - My MultiOgar</a><br>
-                <a href="https://github.com/Barbosik/MultiOgar" class="text-muted" target="_blank">GitHub - Original MultiOgar</a><br>
-                <a href="https://github.com/Megabyte918/MultiOgar-Edited" class="text-muted" target="_blank">GitHub - MultiOgar-Edited</a><br>
-                <a href="https://github.com/CigarProject/Cigar" class="text-muted" target="_blank">GitHub - CigarProject</a><br>
-                <a href="https://github.com/Cigar2/Cigar2" class="text-muted" target="_blank">GitHub - Cigar2</a><br>
-                <a href="https://github.com/Luka967/Cigar" class="text-muted" target="_blank">GitHub - Luka967's Cigar</a><br>
             </div>
         </div>
     </div>
