@@ -1089,20 +1089,18 @@
             } else this.name = value;
         }
         setSkin(value) {
-            this.skin = (value && value[0] === "%" ? value.slice(1) : value) || this.skin;
-            if (this.skin == null || loadedSkins[this.skin]) return;
-            loadedSkins[this.skin] = new Image();
-            loadedSkins[this.skin].src = `${SKIN_URL}${this.skin}.png`;
+            this.skin = value || this.skin;
+            if (this.skin) {
+                if (!loadedSkins[this.skin]) {
+                    loadedSkins[this.skin] = new Image();
+                    loadedSkins[this.skin].src = this.skin;
+                }
+            }
         }
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
             this.color = value;
             this.sColor = darkenColor(value);
-        }
-        draw(ctx) {
-            ctx.save();
-            this.drawShape(ctx);
-            this.drawText(ctx);
         }
         draw(ctx) {
             ctx.save();
