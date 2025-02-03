@@ -1560,6 +1560,57 @@
             if (div) wsInit(`${div[1]}:${div[2]}`);
         }
         window.requestAnimationFrame(drawGame);
+
+        function sendMultiSplit(times) {
+            for (let i = 0; i < times; i++) {
+                wsSend(UINT8[17]); // Send split command
+            }
+        }
+
+        function diagonalSplit() {
+            let angle = Math.atan2(mouse.y - mainCanvas.height / 2, mouse.x - mainCanvas.width / 2);
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    wsSend(UINT8[17]); // Send split command
+                    sendMouseMove(
+                        (mouse.x - mainCanvas.width / 2) / camera.z + camera.x + Math.cos(angle) * 100,
+                        (mouse.y - mainCanvas.height / 2) / camera.z + camera.y + Math.sin(angle) * 100
+                    );
+                }, i * 50); // Delay each split slightly for diagonal effect
+            }
+        }
+
+        function updateActiveSkin(skinUrl) {
+            const activeSkinDiv = document.getElementById('active_skin');
+            activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
+        }
+
+        // Add event listener to the skin URL input
+        document.getElementById('skin_url').addEventListener('input', function() {
+            const skinUrl = this.value;
+            updateActiveSkin(skinUrl);
+        });
+
+        // Example function to set the active skin (you can replace this with your actual logic)
+        function setActiveSkin(skinUrl) {
+            updateActiveSkin(skinUrl);
+        }
+
+        // Call setActiveSkin with the initial skin URL (replace with the actual initial skin URL if needed)
+        setActiveSkin('https://example.com/skins/doge.png');
+
+        function updateActiveSkin(skinName) {
+            const activeSkinDiv = document.getElementById('active_skin');
+            activeSkinDiv.style.backgroundImage = `url(${SKIN_URL}${skinName}.png)`;
+        }
+
+        // Example function to set the active skin (you can replace this with your actual logic)
+        function setActiveSkin(skinName) {
+            updateActiveSkin(skinName);
+        }
+
+        // Call setActiveSkin with the initial skin (replace 'doge' with the actual initial skin name)
+        setActiveSkin('doge');
     }
     wHandle.setServer = function(arg) {
         if (WS_URL === arg) return;
@@ -1639,23 +1690,4 @@
         hideOverlay();
     };
     wHandle.onload = init;
-
-    function sendMultiSplit(times) {
-        for (let i = 0; i < times; i++) {
-            wsSend(UINT8[17]); // Send split command
-        }
-    }
-
-    function diagonalSplit() {
-        let angle = Math.atan2(mouse.y - mainCanvas.height / 2, mouse.x - mainCanvas.width / 2);
-        for (let i = 0; i < 8; i++) {
-            setTimeout(() => {
-                wsSend(UINT8[17]); // Send split command
-                sendMouseMove(
-                    (mouse.x - mainCanvas.width / 2) / camera.z + camera.x + Math.cos(angle) * 100,
-                    (mouse.y - mainCanvas.height / 2) / camera.z + camera.y + Math.sin(angle) * 100
-                );
-            }, i * 50); // Delay each split slightly for diagonal effect
-        }
-    }
 })(window, window.jQuery);
