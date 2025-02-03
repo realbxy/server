@@ -577,6 +577,9 @@
         writer.setUint8(0);
         writer.setStringUTF8(text);
         wsSend(writer);
+        writer.setUint8(0);
+        writer.setStringUTF8(text);
+        wsSend(writer);
     }
     function gameReset() {
         cleanupObject(cells);
@@ -1099,6 +1102,11 @@
             ctx.save();
             this.drawShape(ctx);
             this.drawText(ctx);
+        }
+        draw(ctx) {
+            ctx.save();
+            this.drawShape(ctx);
+            this.drawText(ctx);
             ctx.restore();
         }
         drawShape(ctx) {
@@ -1319,11 +1327,11 @@
                     break;
                 case 81: // Q
                     if (isTyping || overlayShown || pressed.q) break;
-                    wsSend(UINT8[18]);
-                    pressed.q = 1;
+                    sendMultiSplit(2);
                     break;
-                // 🔥 Custom Multi-Split Keybinds 🔥
-                case 50: // Key "2" for Double Split
+                case 51: // Key "3" for Triple Split
+                    sendMultiSplit(3);
+                    break;
                     sendMultiSplit(2);
                     break;
                 case 51: // Key "3" for Triple Split
@@ -1684,10 +1692,13 @@
             wjQuery("#inPageModalTitle").text("Skins");
             wjQuery("#inPageModalBody").html(data);
         });
+    wHandle.onload = init;
     };
     wHandle.play = function(arg) {
+
         sendPlay(arg);
         hideOverlay();
     };
     wHandle.onload = init;
+
 })(window, window.jQuery);
