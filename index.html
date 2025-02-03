@@ -38,6 +38,25 @@
                 for (let i = 0; i < 2; i++) setTimeout(split, 50 * i);
         }
         window.addEventListener("keydown", keydown);
+
+        function updateActiveSkin(skinUrl) {
+            const activeSkinDiv = document.getElementById('active_skin');
+            activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
+        }
+
+        // Add event listener to the skin URL input
+        document.getElementById('skin_url').addEventListener('input', function() {
+            const skinUrl = this.value;
+            updateActiveSkin(skinUrl);
+        });
+
+        // Example function to set the active skin (you can replace this with your actual logic)
+        function setActiveSkin(skinUrl) {
+            updateActiveSkin(skinUrl);
+        }
+
+        // Call setActiveSkin with the initial skin URL (replace with the actual initial skin URL if needed)
+        setActiveSkin('https://example.com/skins/doge.png');
     </script>
 </head>
 <body>
