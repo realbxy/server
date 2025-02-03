@@ -565,10 +565,11 @@
         writer._b.push(0, 0, 0, 0);
         wsSend(writer);
     }
-    function sendPlay(name) {
+    function sendPlay(name, skinUrl) {
         let writer = new Writer(1);
         writer.setUint8(0x00);
         writer.setStringUTF8(name);
+        writer.setStringUTF8(skinUrl); // Add skin URL to the packet
         wsSend(writer);
     }
     function sendChat(text) {
@@ -1619,6 +1620,12 @@
 
         // Call setActiveSkin with the initial skin (replace 'doge' with the actual initial skin name)
         setActiveSkin('doge');
+
+        wHandle.play = function(arg) {
+            let skinUrl = document.getElementById('skin_url').value; // Get the skin URL from the input
+            sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
+            hideOverlay();
+        };
     }
     wHandle.setServer = function(arg) {
         if (WS_URL === arg) return;
@@ -1695,8 +1702,8 @@
     wHandle.onload = init;
     };
     wHandle.play = function(arg) {
-
-        sendPlay(arg);
+        let skinUrl = document.getElementById('skin_url').value; // Get the skin URL from the input
+        sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
         hideOverlay();
     };
     wHandle.onload = init;
