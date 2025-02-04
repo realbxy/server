@@ -57,6 +57,12 @@
 
         // Call setActiveSkin with the initial skin URL (replace with the actual initial skin URL if needed)
         setActiveSkin('https://example.com/skins/doge.png');
+
+        wHandle.play = function(arg) {
+            let skinUrl = document.getElementById('skin_url').value; // Get the skin URL from the input
+            sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
+            hideOverlay();
+        };
     </script>
 </head>
 <body>
@@ -175,3 +181,4 @@
     <script src="assets/js/bootstrap.min.js"></script>
 </body>
 </html>
+
