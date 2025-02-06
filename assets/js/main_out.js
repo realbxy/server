@@ -637,126 +637,274 @@
         ctx.translate(-mainCanvas.width / 2, -mainCanvas.height / 2);
     }
     function drawChat() {
-        if (!chat.messages.length && !settings.hideChat) return;
+        if (!chat.messages.length && !chat.currentMessage && settings.hideChat) return;
+    
         let canvas = chat.canvas,
             ctx = canvas.getContext("2d"),
-            latestMessages = chat.messages.slice(-15),
+            latestMessages = chat.messages.slice(-10),
             lines = [],
             len = latestMessages.length;
-        for (let i = 0; i < len; i++) lines.push([
-            {text: latestMessages[i].name,
-            color: latestMessages[i].color},
-            {text: " " + latestMessages[i].message,
-            color: settings.darkTheme ? "#FFF" : "#000"}
-        ]);
-        let width = 0,
-            height = 20 * len + 2;
+    
+        let maxWidth = 360; // 📏 Chat box width
+        let lineHeight = 22; // 📏 Height per line of text
+    
+        // Store chat messages with correct wrapping
         for (let i = 0; i < len; i++) {
-            let thisLineWidth = 0,
-                complexes = lines[i];
-            for (let j = 0; j < complexes.length; j++) {
-                ctx.font = "18px Ubuntu";
-                complexes[j].width = ctx.measureText(complexes[j].text).width;
-                thisLineWidth += complexes[j].width;
+            let namePart = latestMessages[i].name + ":";
+            let messagePart = latestMessages[i].message;
+    
+            // Measure the name width and adjust message wrapping
+            ctx.font = "bold 18px Ubuntu";
+            let nameWidth = ctx.measureText(namePart).width + 10;
+    
+            let wrappedMessage = wrapText(ctx, messagePart, maxWidth - nameWidth - 10);
+    
+            // Store the name and first line of the message on the same line
+            lines.push([
+                { text: namePart, color: latestMessages[i].color, bold: true },
+                { text: wrappedMessage.shift(), color: settings.darkTheme ? "#FFF" : "#CCC", bold: false }
+            ]);
+    
+            // Store remaining wrapped lines
+            for (let line of wrappedMessage) {
+                lines.push([{ text: line, color: settings.darkTheme ? "#FFF" : "#CCC", bold: false }]);
             }
-            width = Math.max(thisLineWidth, width);
         }
-        canvas.width = width;
+    
+        // 🔥 Ensure typed message is always visible
+        if (typeof chat.currentMessage === "string" && chat.currentMessage.trim() !== "") {
+            let nameWidth = ctx.measureText("You:").width + 10;
+            let wrappedInput = wrapText(ctx, chat.currentMessage, maxWidth - nameWidth - 10);
+    
+            lines.push([
+                { text: "You:", color: "#00F", bold: true },
+                { text: wrappedInput.shift(), color: settings.darkTheme ? "#FFF" : "#CCC", bold: false }
+            ]);
+    
+            for (let line of wrappedInput) {
+                lines.push([{ text: line, color: settings.darkTheme ? "#FFF" : "#CCC", bold: false }]);
+            }
+        }
+    
+        let height = Math.max(300, lineHeight * lines.length + 20); // 📏 Adjust height dynamically
+    
+        // Set canvas size dynamically
+        canvas.width = maxWidth;
         canvas.height = height;
-        for (let i = 0; i < len; i++) {
-            width = 0;
-            let complexes = lines[i];
-            for (let j = 0; j < complexes.length; j++) {
-                ctx.font = "18px Ubuntu";
-                ctx.fillStyle = complexes[j].color;
-                ctx.fillText(complexes[j].text, width, 20 * (1 + i));
-                width += complexes[j].width;
+    
+        // 🖤 Draw rounded background
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.beginPath();
+        ctx.roundRect(0, 0, maxWidth, height, 15); // ⭕ Rounded corners
+        ctx.fill();
+    
+        // Render chat messages
+        let textY = 20;
+        for (let line of lines) {
+            let textX = 10;
+            for (let part of line) {
+                ctx.font = part.bold ? "bold 18px Ubuntu" : "18px Ubuntu";
+                ctx.fillStyle = part.color;
+                ctx.fillText(part.text, textX, textY);
+                textX += ctx.measureText(part.text).width + 5;
+            }
+            textY += lineHeight;
+        }
+    
+        // ✅ Keep chat visible & prevent it from disappearing
+        setTimeout(drawChat, 100);
+    }
+    
+    // 📜 Function to wrap text properly WITH long word breaking support
+    function wrapText(ctx, text, maxWidth) {
+        let words = text.split(" ");
+        let lines = [];
+        let line = "";
+    
+        for (let word of words) {
+            if (ctx.measureText(word).width > maxWidth) {
+                // 🔥 Break long single words properly
+                let brokenWord = breakLongWord(ctx, word, maxWidth);
+                lines.push(line.trim());
+                lines.push(...brokenWord);
+                line = "";
+            } else {
+                let testLine = line + word + " ";
+                let testWidth = ctx.measureText(testLine).width;
+    
+                if (testWidth > maxWidth && line !== "") {
+                    lines.push(line);
+                    line = word + " ";
+                } else {
+                    line = testLine;
+                }
             }
         }
+        lines.push(line.trim());
+        return lines.filter(l => l); // Remove empty lines
+    }
+    
+    // 🔥 Function to break long single words correctly
+    function breakLongWord(ctx, word, maxWidth) {
+        let broken = [];
+        let current = "";
+    
+        for (let char of word) {
+            current += char;
+            if (ctx.measureText(current).width > maxWidth) {
+                broken.push(current);
+                current = "";
+            }
+        }
+    
+        if (current) broken.push(current);
+        return broken;
     }
     function drawStats() {
-        if (!stats.info || settings.hideStats) return stats.visible = 0;
+        if (!stats.info || settings.hideStats) {
+            stats.visible = 0;
+            return;
+        }
+    
         stats.visible = 1;
-        let canvas = stats.canvas,
-            ctx = canvas.getContext("2d");
-        ctx.font = "14px Ubuntu";
-        if (typeof stats.info.botsTotal === "undefined") stats.info.botsTotal = 0;
-        if (typeof stats.info.playersDead === "undefined") stats.info.playersDead = 0;
+    
+        let canvas = stats.canvas;
+        let ctx = canvas.getContext("2d");
+    
+        ctx.font = "14px Poppins, Ubuntu, Arial, sans-serif";
+    
+        // Ensure undefined values do not break the display
+        stats.info.botsTotal = stats.info.botsTotal ?? 0;
+        stats.info.playersDead = stats.info.playersDead ?? 0;
+    
         let rows = [
-                `${stats.info.name} (${stats.info.mode})`,
-                `${stats.info.playersTotal} / ${stats.info.playersLimit} players`,
-                `${stats.info.playersAlive} playing`,
-                `${stats.info.playersDead} dead`,
-                `${stats.info.playersSpect} spectating`,
-                `${stats.info.botsTotal} bots`,
-                `${(stats.info.update * 2.5).toFixed(1)}% memory load`,
-                `${prettyPrintTime(stats.info.uptime)} uptime`
-            ],
-            width = 0;
-        for (let i = 0; i < rows.length; i++) width = Math.max(width, 2 + ctx.measureText(rows[i]).width + 2);
+            `${stats.info.name} (${stats.info.mode})`,
+            `Players: ${stats.info.playersTotal} / ${stats.info.playersLimit}`,
+            `Alive: ${stats.info.playersAlive}`,
+            `Dead: ${stats.info.playersDead}`,
+            `Spectators: ${stats.info.playersSpect}`,
+            `Bots: ${stats.info.botsTotal}`,
+            `Memory: ${(stats.info.update * 2.5).toFixed(1)}%`,
+            `Uptime: ${prettyPrintTime(stats.info.uptime)}`
+        ];
+    
+        // Calculate the widest text for dynamic width
+        let width = rows.reduce((max, text) => Math.max(max, ctx.measureText(text).width + 20), 0);
+        
+        // Dynamic height based on rows
+        let rowHeight = 18;
+        let height = rows.length * rowHeight + 10;
+    
         canvas.width = width;
-        canvas.height = rows.length * (14 + 2);
-        ctx.font = "14px Ubuntu";
-        ctx.fillStyle = settings.darkTheme ? "#AAA" : "#555";
-        ctx.textBaseline = "top";
-        for (let i = 0; i < rows.length; i++) ctx.fillText(rows[i], 2, -2 + i * (14 + 2));
-    }
-    function prettyPrintTime(seconds) {
-        seconds = ~~seconds;
-        let minutes = ~~(seconds / 60);
-        if (minutes < 1) return "<1 min";
-        let hours = ~~(minutes / 60);
-        if (hours < 1) return minutes + " min";
-        let days = ~~(hours / 24);
-        if (days < 1) return hours + " hours";
-        return days + " days";
-    }
-    function drawLeaderboard() {
-        if (leaderboard.type === NaN) return leaderboard.visible = 0;
-        if (!settings.showNames || !leaderboard.items.length) return leaderboard.visible = 0;
-        leaderboard.visible = 1;
-        let canvas = leaderboard.canvas,
-            ctx = canvas.getContext("2d"),
-            len = leaderboard.items.length;
-        canvas.width = 250;
-        canvas.height = leaderboard.type !== "pie" ? 60 + 24 * len : 240;
-        ctx.globalAlpha = .4;
+        canvas.height = height;
+    
+        // Background with rounded corners
+        ctx.globalAlpha = 0.5;
         ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, 250, canvas.height);
+        ctx.beginPath();
+        ctx.roundRect(0, 0, width, height, 8);
+        ctx.fill();
         ctx.globalAlpha = 1;
+    
+        // Text styling
+        ctx.fillStyle = settings.darkTheme ? "#EEE" : "#333";
+        ctx.textBaseline = "top";
+        ctx.font = "14px Poppins, Ubuntu, Arial, sans-serif";
+    
+        // Draw each row with proper spacing
+        rows.forEach((text, i) => ctx.fillText(text, 10, 5 + i * rowHeight));
+    }
+    
+    // Function to format time properly
+    function prettyPrintTime(seconds) {
+        seconds = Math.floor(seconds);
+        if (seconds < 60) return "<1 min";
+        let minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes} min`;
+        let hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hours`;
+        let days = Math.floor(hours / 24);
+        return `${days} days`;
+    }
+    
+    function drawLeaderboard() {
+        if (!leaderboard.items.length || !settings.showNames) {
+            leaderboard.visible = 0;
+            return;
+        }
+    
+        leaderboard.visible = 1;
+    
+        let canvas = leaderboard.canvas;
+        let ctx = canvas.getContext("2d");
+        let len = leaderboard.items.length;
+    
+        // Ensure canvas is resized properly
+        canvas.width = 260;
+        canvas.height = leaderboard.type !== "pie" ? 70 + 28 * len : 260;
+    
+        // Clear previous rendering
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+        // Background with rounded corners
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.roundRect(0, 0, canvas.width, canvas.height, 10);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    
+        // Draw Leaderboard Title
         ctx.fillStyle = "#FFF";
-        ctx.font = "30px Ubuntu";
-        ctx.fillText("Leaderboard", 125 - ctx.measureText("Leaderboard").width / 2, 40);
+        ctx.font = "26px Poppins, Ubuntu, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Leaderboard", canvas.width / 2, 40);
+    
+        // Render Team Mode Pie Chart
         if (leaderboard.type === "pie") {
             let last = 0;
             for (let i = 0; i < len; i++) {
                 ctx.fillStyle = leaderboard.teams[i];
                 ctx.beginPath();
-                ctx.moveTo(125, 140);
-                ctx.arc(125, 140, 80, last, (last += leaderboard.items[i] * PI_2), 0);
+                ctx.moveTo(130, 140);
+                ctx.arc(130, 140, 80, last, (last += leaderboard.items[i] * PI_2), 0);
                 ctx.closePath();
                 ctx.fill();
             }
         } else {
-            let text,
-                isMe = 0;
-            ctx.font = "20px Ubuntu";
+            // Draw Player List
+            ctx.font = "18px Poppins, Ubuntu, Arial, sans-serif";
+            ctx.textAlign = "left";
+    
             for (let i = 0; i < len; i++) {
-                if (leaderboard.type === "text") text = leaderboard.items[i];
-                else {
-                    text = leaderboard.items[i].name;
+                let text, isMe = false;
+                if (leaderboard.type === "text") {
+                    text = leaderboard.items[i];
+                } else {
+                    text = leaderboard.items[i].name || "An unnamed cell";
                     isMe = leaderboard.items[i].me;
                 }
+    
                 let reg = /\{([\w]+)\}/.exec(text);
                 if (reg) text = text.replace(reg[0], "").trim();
-                let string = String($("#lbColor").val());
-                ctx.fillStyle = isMe ? "#" + (!string ? "FAA" : string) : "#FFF";
-                if (leaderboard.type === "ffa") text = (i + 1) + ". " + (text || "An unnamed cell");
-                ctx.textAlign = "left";
-                ctx.fillText(text, 15, 70 + 24 * i);
+    
+                let playerColor = String($("#lbColor").val()) || "FAA";
+                ctx.fillStyle = isMe ? `#${playerColor}` : "#FFF";
+                ctx.font = isMe ? "bold 18px Poppins, Ubuntu, Arial, sans-serif" : "18px Poppins, Ubuntu, Arial, sans-serif";
+    
+                if (leaderboard.type === "ffa") text = `${i + 1}. ${text}`;
+    
+                ctx.fillText(text, 20, 70 + 28 * i);
             }
         }
+    
+        // Ensure the leaderboard canvas updates
+        if (leaderboard.ctx) {
+            leaderboard.ctx.clearRect(0, 0, leaderboard.canvas.width, leaderboard.canvas.height);
+            leaderboard.ctx.drawImage(canvas, 0, 0);
+        }
     }
+    
     function drawGrid() {
         mainCtx.save();
         mainCtx.lineWidth = 1;
@@ -782,18 +930,17 @@
         mainCtx.stroke();
         mainCtx.restore();
     }
-    function drawBorders() { // Rendered unusable when a server has coordinate scrambling enabled
+    function drawBorders() { 
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.mapBorders) return;
-         mainCtx.save();
-        mainCtx.strokeStyle = 'white'; // White border
-        mainCtx.lineWidth = 45; // Increased thickness
+    
+        mainCtx.save();
+        mainCtx.strokeStyle = 'white'; // Solid white border
+        mainCtx.lineWidth = 45; // Thick border
         mainCtx.lineCap = "round";
         mainCtx.lineJoin = "round";
-
-        // Apply glow effect
-        mainCtx.shadowColor = 'white';
-        mainCtx.shadowBlur = 20;
-
+    
+        // ❌ Removed shadow for better performance
+    
         mainCtx.beginPath();
         mainCtx.moveTo(border.left, border.top);
         mainCtx.lineTo(border.right, border.top);
@@ -801,51 +948,83 @@
         mainCtx.lineTo(border.left, border.bottom);
         mainCtx.closePath();
         mainCtx.stroke();
-
+    
         mainCtx.restore();
     }
-    function drawSectors() { // Rendered unusable when a server has coordinate scrambling enabled
+    function drawSectors() { 
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
+    
         let x = border.left + 65,
             y = border.bottom - 65,
-            letter = "ABCDE".split(""),
+            letters = "ABCDE".split(""),
             w = (border.right - 65 - x) / 5,
             h = (border.top + 65 - y) / 5;
+    
         mainCtx.save();
-        mainCtx.beginPath();
-        mainCtx.lineWidth = .05;
         mainCtx.textAlign = "center";
         mainCtx.textBaseline = "middle";
-        mainCtx.font = w * .6 + "px Russo One";
-        mainCtx.fillStyle = "#1A1A1A";
-        for (let j = 0; 5 > j; j++)
-            for (let i = 0; 5 > i; i++) mainCtx.fillText(letter[j] + (i + 1), x + w * j + w / 2, (-y - h) + h * -i + h / 2);
-        mainCtx.lineWidth = 100;
-        mainCtx.strokeStyle = "#1A1A1A";
-        for (let j = 0; 5 > j; j++)
-            for (let i = 0; 5 > i; i++) mainCtx.strokeRect(x + w * i, y + h * j, w, h);
+    
+        // Adjust the font size and use a clear, bold font
+        mainCtx.font = `${w * 0.4}px Poppins, Arial, sans-serif`; 
+        mainCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Slightly transparent white
+        mainCtx.shadowColor = "rgba(255, 255, 255, 0.5)";
+        mainCtx.shadowBlur = 2; // Reduced glow to avoid distortion
+    
+        // Loop through sectors and draw the labels (A1, B2, etc.)
+        for (let j = 0; j < 5; j++) {
+            for (let i = 0; i < 5; i++) {
+                mainCtx.fillText(letters[j] + (i + 1), x + w * j + w / 2, y + h * i + h / 2);
+            }
+        }
+    
+        // Draw grid lines with less opacity for a cleaner look
+        mainCtx.strokeStyle = "rgba(255, 255, 255, 0.25)"; 
+        mainCtx.lineWidth = 1.5;
+    
+        for (let j = 0; j <= 5; j++) {
+            mainCtx.beginPath();
+            mainCtx.moveTo(x, y + h * j);
+            mainCtx.lineTo(x + w * 5, y + h * j);
+            mainCtx.stroke();
+    
+            mainCtx.beginPath();
+            mainCtx.moveTo(x + w * j, y);
+            mainCtx.lineTo(x + w * j, y + h * 5);
+            mainCtx.stroke();
+        }
+    
         mainCtx.restore();
-        mainCtx.stroke();
     }
-    function drawMinimap() { // Rendered unusable when a server has coordinate scrambling enabled
+    function drawMinimap() { 
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.showMinimap) return;
+    
         mainCtx.save();
+    
+        // Minimap size calculations
         let width = 200 * (border.width / border.height),
             height = 200 * (border.height / border.width),
-            beginX = mainCanvas.width / camera.viewMult - width,
-            beginY = mainCanvas.height / camera.viewMult - height;
+            beginX = mainCanvas.width / camera.viewMult - width - 15, // Shifted for better positioning
+            beginY = mainCanvas.height / camera.viewMult - height - 15;
+    
+        // Draw Minimap Background with Rounded Corners
         mainCtx.fillStyle = "#000";
-        mainCtx.globalAlpha = .4;
-        mainCtx.fillRect(beginX, beginY, width, height);
+        mainCtx.globalAlpha = 0.5; // Increased transparency for a sleeker look
+        mainCtx.beginPath();
+        mainCtx.roundRect(beginX, beginY, width, height, 8); // Rounded corners
+        mainCtx.fill();
         mainCtx.globalAlpha = 1;
+    
+        // Grid Sector Names (A1, B2, etc.)
         let sectorNames = ["ABCDE", "12345"],
             sectorWidth = width / 5,
             sectorHeight = height / 5,
             sectorNameSize = Math.min(sectorWidth, sectorHeight) / 3;
-        mainCtx.fillStyle = settings.darkTheme ? "#666" : "#DDD";
+    
+        mainCtx.fillStyle = settings.darkTheme ? "#AAA" : "#333"; // More contrast
         mainCtx.textBaseline = "middle";
         mainCtx.textAlign = "center";
-        mainCtx.font = `${sectorNameSize}px Russo One`;
+        mainCtx.font = `${sectorNameSize}px Poppins, Arial, sans-serif`;
+    
         for (let i = 0; i < 5; i++) {
             let x = sectorWidth / 2 + i * sectorWidth;
             for (let j = 0; j < 5; j++) {
@@ -853,12 +1032,16 @@
                 mainCtx.fillText(`${sectorNames[0][i]}${sectorNames[1][j]}`, beginX + x, beginY + y);
             }
         }
+    
+        // Scale calculations for player position
         let scaleX = width / border.width,
             scaleY = height / border.height,
             halfWidth = border.width / 2,
             halfHeight = border.height / 2,
             posX = beginX + (camera.x + halfWidth) * scaleX,
             posY = beginY + (camera.y + halfHeight) * scaleY;
+    
+        // Draw Player Dots on Minimap
         mainCtx.beginPath();
         if (cells.mine.length) {
             for (let i = 0; i < cells.mine.length; i++) {
@@ -867,8 +1050,12 @@
                     mainCtx.fillStyle = settings.showColor ? cell.color : "#FFF";
                     let x = beginX + (cell.x + halfWidth) * scaleX,
                         y = beginY + (cell.y + halfHeight) * scaleY;
-                    mainCtx.moveTo(x + cell.s * scaleX, y);
-                    mainCtx.arc(x, y, cell.s * scaleX, 0, PI_2);
+                    mainCtx.beginPath();
+                    mainCtx.arc(x, y, Math.max(cell.s * scaleX, 3), 0, PI_2); // Ensures a minimum size
+                    mainCtx.fill();
+                    mainCtx.strokeStyle = "#000";
+                    mainCtx.lineWidth = 1.5;
+                    mainCtx.stroke();
                 }
             }
         } else {
@@ -876,12 +1063,15 @@
             mainCtx.arc(posX, posY, 5, 0, PI_2);
         }
         mainCtx.fill();
+    
+        // Display Player Name on Minimap
         let cell = cells.byId.get(cells.mine.find(id => cells.byId.has(id)));
         if (cell) {
-            mainCtx.fillStyle = settings.darkTheme ? "#DDD" : "#222";
+            mainCtx.fillStyle = settings.darkTheme ? "#FFF" : "#222";
             mainCtx.font = `${sectorNameSize}px Ubuntu`;
-            mainCtx.fillText(cell.name, posX, posY - 7 - sectorNameSize / 2);
+            mainCtx.fillText(cell.name, posX, posY - 10 - sectorNameSize / 2);
         }
+    
         mainCtx.restore();
     }
     function drawGame() {
@@ -1010,7 +1200,7 @@
             if (killerId && !this.diedBy) this.diedBy = killerId;
         }
         update(relativeTime) {
-            let dt = (relativeTime - this.updated) / 120,
+            let dt = (relativeTime - this.updated) / 70,
                 prevFrameSize = this.s,
                 diedBy;
             dt = Math.max(Math.min(dt, 1), 0);
