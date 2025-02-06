@@ -39,30 +39,32 @@
         }
         window.addEventListener("keydown", keydown);
 
+        // Function to update the active skin preview
         function updateActiveSkin(skinUrl) {
             const activeSkinDiv = document.getElementById('active_skin');
             activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
         }
 
-        // Add event listener to the skin URL input
-        document.getElementById('skin_url').addEventListener('input', function() {
-            const skinUrl = this.value;
-            updateActiveSkin(skinUrl);
+        // Listen for skin URL input changes & update preview
+        document.addEventListener("DOMContentLoaded", function() {
+            const skinInput = document.getElementById('skin_url');
+            skinInput.addEventListener('input', function() {
+                updateActiveSkin(this.value);
+            });
+
+            // Modify the Play button click event
+            document.getElementById('play-btn').addEventListener('click', function() {
+                let name = document.getElementById('nick').value.trim();
+                let skinUrl = document.getElementById('skin_url').value.trim();
+                
+                if (!name) {
+                    alert("Please enter a nickname!"); 
+                    return;
+                }
+
+                sendPlay(name, skinUrl); // Pass name & skin URL
+            });
         });
-
-        // Example function to set the active skin (you can replace this with your actual logic)
-        function setActiveSkin(skinUrl) {
-            updateActiveSkin(skinUrl);
-        }
-
-        // Call setActiveSkin with the initial skin URL (replace with the actual initial skin URL if needed)
-        setActiveSkin('https://example.com/skins/doge.png');
-
-        wHandle.play = function(arg) {
-            let skinUrl = document.getElementById('skin_url').value; // Get the skin URL from the input
-            sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
-            hideOverlay();
-        };
     </script>
 </head>
 <body>
