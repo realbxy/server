@@ -569,7 +569,7 @@
         let writer = new Writer(1);
         writer.setUint8(0x00);
         writer.setStringUTF8(name);
-        writer.setStringUTF8(skinUrl); // Add skin URL to the packet
+        writer.setStringUTF8(skinUrl); // Ensure skin URL is sent
         wsSend(writer);
     }
     function sendChat(text) {
@@ -1289,11 +1289,18 @@
             } else this.name = value;
         }
         setSkin(value) {
-            this.skin = value || this.skin;
-            if (this.skin) {
-                if (!loadedSkins[this.skin]) {
-                    loadedSkins[this.skin] = new Image();
+            if (!value) return;
+            this.skin = value;
+        
+            if (!loadedSkins[this.skin]) {
+                loadedSkins[this.skin] = new Image();
+                
+                // Ensure it's an external link (like Imgur) instead of local paths
+                if (this.skin.startsWith("http")) {
+                    loadedSkins[this.skin].crossOrigin = "anonymous"; // Prevent CORS issues
                     loadedSkins[this.skin].src = this.skin;
+                } else {
+                    loadedSkins[this.skin].src = `./skins/${this.skin}.png`; // Local skins
                 }
             }
         }
