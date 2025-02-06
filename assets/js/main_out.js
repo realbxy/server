@@ -954,21 +954,22 @@
     function drawSectors() { 
     if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
 
-    let x = border.left + 65,
-        y = border.bottom - 65,
+    let x = border.left,
+        y = border.top,
         letters = "ABCDE".split(""),
-        w = (border.right - 65 - x) / 5,
-        h = (border.top + 65 - y) / 5;
+        cols = 5, rows = 5, // Number of columns & rows
+        w = (border.right - border.left) / cols, // Sector width
+        h = (border.bottom - border.top) / rows; // Sector height
 
     mainCtx.save();
     mainCtx.textAlign = "center";
     mainCtx.textBaseline = "middle";
-    mainCtx.font = "18px Arial"; // System font for better performance
-    mainCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; 
+    mainCtx.font = "24px Arial"; // Slightly bigger font for visibility
+    mainCtx.fillStyle = "rgba(255, 255, 255, 0.95)"; // Almost fully visible white text
 
     // 🏷️ Draw sector labels (A1, B2, etc.) in the correct positions
-    for (let j = 0; j < 5; j++) {
-        for (let i = 0; i < 5; i++) {
+    for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
             let labelX = x + w * i + w / 2; // Center horizontally
             let labelY = y + h * j + h / 2; // Center vertically
             mainCtx.fillText(letters[j] + (i + 1), labelX, labelY);
@@ -976,23 +977,26 @@
     }
 
     // 📏 Draw sector grid lines
-    mainCtx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    mainCtx.strokeStyle = "rgba(255, 255, 255, 0.2)"; // Softer lines
     mainCtx.lineWidth = 2;
 
-    for (let j = 0; j <= 5; j++) {
+    for (let j = 0; j <= rows; j++) {
         mainCtx.beginPath();
         mainCtx.moveTo(x, y + h * j);
-        mainCtx.lineTo(x + w * 5, y + h * j);
+        mainCtx.lineTo(x + w * cols, y + h * j);
         mainCtx.stroke();
+    }
 
+    for (let i = 0; i <= cols; i++) {
         mainCtx.beginPath();
-        mainCtx.moveTo(x + w * j, y);
-        mainCtx.lineTo(x + w * j, y + h * 5);
+        mainCtx.moveTo(x + w * i, y);
+        mainCtx.lineTo(x + w * i, y + h * rows);
         mainCtx.stroke();
     }
 
     mainCtx.restore();
 }
+
 
 
     function drawMinimap() { 
