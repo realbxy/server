@@ -1505,9 +1505,9 @@
         if (/firefox/i.test(navigator.userAgent)) document.addEventListener("DOMMouseScroll", handleScroll, 0);
         else document.body.onmousewheel = handleScroll;
         wHandle.onkeydown = function(event) {
+            if (isTyping || overlayShown) return;
             switch (event.keyCode) {
                 case 13: // Enter
-                    if (overlayShown) break;
                     if (settings.hideChat) break;
                     if (isTyping) {
                         chatBox.blur();
@@ -1517,148 +1517,121 @@
                     } else chatBox.focus();
                     break;
                 case 32: // Space
-                    if (isTyping || overlayShown || pressed.space) break;
                     wsSend(UINT8[17]);
                     pressed.space = 1;
                     break;
                 case 87: // W
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[21]);
                     pressed.w = 1;
                     break;
                 case 81: // Q
-                    if (isTyping || overlayShown || pressed.q) break;
                     sendMultiSplit(2);
+                    pressed.q = 1;
                     break;
                 case 51: // Key "3" for Triple Split
                     sendMultiSplit(3);
-                    break;
-                    sendMultiSplit(2);
-                    break;
-                case 51: // Key "3" for Triple Split
-                    sendMultiSplit(3);
+                    pressed[51] = 1;
                     break;
                 case 52: // Key "4" for 16x Split
                     sendMultiSplit(16);
+                    pressed[52] = 1;
                     break;
                 case 53: // Key "5" for 32x Split
                     sendMultiSplit(32);
+                    pressed[53] = 1;
                     break;
                 case 54: // Key "6" for 64x Split
                     sendMultiSplit(64);
-                    break;
-                case 81: // Key "Q" for Diagonal Split
-                    diagonalSplit();
+                    pressed[54] = 1;
                     break;
                 case 69: // E
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[22]);
                     pressed.e = 1;
                     break;
                 case 82: // R
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[23]);
                     pressed.r = 1;
                     break;
                 case 84: // T
-                    if (isTyping || overlayShown || pressed.t) break;
                     wsSend(UINT8[24]);
                     pressed.t = 1;
                     break;
                 case 80: // P
-                    if (isTyping || overlayShown || pressed.p) break;
                     wsSend(UINT8[25]);
                     pressed.p = 1;
                     break;
                 case 79: // O
-                    if (isTyping || overlayShown || pressed.o) break;
                     wsSend(UINT8[26]);
                     pressed.o = 1;
                     break;
                 case 77: // M
-                    if (isTyping || overlayShown || pressed.m) break;
                     wsSend(UINT8[27]);
                     pressed.m = 1;
                     break;
                 case 73: // I
-                    if (isTyping || overlayShown || pressed.i) break;
                     wsSend(UINT8[28]);
                     pressed.i = 1;
                     break;
                 case 89: // Y
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[30]);
                     pressed.y = 1;
                     break;
                 case 85: // U
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[31]);
                     pressed.u = 1;
                     break;
                 case 75: // K
-                    if (isTyping || overlayShown || pressed.k) break;
                     wsSend(UINT8[29]);
                     pressed.k = 1;
                     break;
                 case 76: // L
-                    if (isTyping || overlayShown || pressed.l) break;
                     wsSend(UINT8[33]);
                     pressed.l = 1;
                     break;
                 case 72: // H
-                    if (isTyping || overlayShown || pressed.h) break;
                     wsSend(UINT8[34]);
                     pressed.h = 1;
                     break;
                 case 90: // Z
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[35]);
                     pressed.z = 1;
                     break;
                 case 88: // X
-                    if (isTyping || overlayShown || pressed.x) break;
                     wsSend(UINT8[36]);
                     pressed.x = 1;
                     break;
                 case 83: // S
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[37]);
                     pressed.s = 1;
                     break;
                 case 67: // C
-                    if (isTyping || overlayShown || pressed.c) break;
                     wsSend(UINT8[38]);
                     pressed.c = 1;
                     break;
                 case 71: // J
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[39]);
                     pressed.j = 1;
                     break;
                 case 74: // G
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[40]);
                     pressed.g = 1;
                     break;
                 case 66: // B
-                    if (isTyping || overlayShown || pressed.b) break;
                     wsSend(UINT8[41]);
                     pressed.b = 1;
                     break;
                 case 86: // V
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[42]);
                     pressed.v = 1;
                     break;
                 case 78: // N
-                    if (isTyping || overlayShown) break;
                     wsSend(UINT8[43]);
                     pressed.n = 1;
                     break;
                 case 27: // Esc
-                    if (pressed.esc) break;
                     overlayShown ? hideOverlay() : showOverlay();
                     pressed.esc = 1;
+                    break;
             }
         };
         wHandle.onkeyup = function(event) {
@@ -1670,7 +1643,6 @@
                     pressed.w = 0;
                     break;
                 case 81: // Q
-                    if (pressed.q) wsSend(UINT8[19]);
                     pressed.q = 0;
                     break;
                 case 69: // E
@@ -1721,11 +1693,11 @@
                 case 67: // C
                     pressed.c = 0;
                     break;
-                case 74: // G
-                    pressed.g = 0;
-                    break;
                 case 71: // J
                     pressed.j = 0;
+                    break;
+                case 74: // G
+                    pressed.g = 0;
                     break;
                 case 66: // B
                     pressed.b = 0;
@@ -1738,6 +1710,7 @@
                     break;
                 case 27: // Esc
                     pressed.esc = 0;
+                    break;
             }
         };
         chatBox.onblur = function() {
