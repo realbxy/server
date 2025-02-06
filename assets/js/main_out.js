@@ -1315,7 +1315,7 @@ cacheSectors();
         draw(ctx) {
             ctx.save();
             this.drawShape(ctx);
-            this.drawText(ctx);
+            this.(ctx);
             ctx.restore();
         }
         drawShape(ctx) {
@@ -1364,16 +1364,16 @@ cacheSectors();
             }
             if (showCellBorder) this.s += ctx.lineWidth / 2 - 2;
         }
-        drawText(ctx) {
+        (ctx) {
             if (this.s < 20 || this.jagged) return;
             if (settings.showMass && (cells.mine.indexOf(this.id) !== -1 || !cells.mine.length) && !this.food/* && !this.ejected*/) {
                 let mass = (~~(this.s * this.s / 100)).toString();
                 if (this.name && settings.showNames) {
-                    drawText(ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
+                    (ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
                     let y = this.y + Math.max(this.s / 4.5, this.nameSize / 1.5);
-                    drawText(ctx, 1, this.x, y, this.nameSize / 2, this.drawNameSize / 2, mass);
-                } else drawText(ctx, 1, this.x, this.y, this.nameSize / 2, this.drawNameSize / 2, mass);
-            } else if (this.name && settings.showNames) drawText(ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
+                    (ctx, 1, this.x, y, this.nameSize / 2, this.drawNameSize / 2, mass);
+                } else (ctx, 1, this.x, this.y, this.nameSize / 2, this.drawNameSize / 2, mass);
+            } else if (this.name && settings.showNames) (ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
         }
     }
     // 2-var draw-stay cache
@@ -1389,18 +1389,20 @@ cacheSectors();
             if (syncAppStamp - cachedMass[i].accessTime >= 5000) delete cachedMass[i];
     }
     function drawTextOnto(canvas, ctx, text, size) {
-        ctx.font = `${size}px Ubuntu`;
+        ctx.font = `${size}px 'Hind Madurai', sans-serif`; // Updated to Hind Madurai
         ctx.lineWidth = settings.showTextOutline ? Math.max(~~(size / 10), 2) : 2;
         canvas.width = ctx.measureText(text).width + 2 * ctx.lineWidth;
         canvas.height = 4 * size;
-        ctx.font = `${size}px Ubuntu`;
+        ctx.font = `${size}px 'Hind Madurai', sans-serif`; // Updated again
         ctx.lineWidth = settings.showTextOutline ? Math.max(~~(size / 10), 2) : 2;
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
+        
         let string = String($("#nameColor").val());
         ctx.fillStyle = "#" + (!string ? "FFF" : string);
         ctx.strokeStyle = "#000";
         ctx.translate(canvas.width / 2, 2 * size);
+        
         (ctx.lineWidth !== 1) && ctx.strokeText(text, 0, 0);
         ctx.fillText(text, 0, 0);
     }
@@ -1418,7 +1420,7 @@ cacheSectors();
     function newNameCache(value, size) {
         let canvas = document.createElement("canvas"),
             ctx = canvas.getContext("2d");
-        drawTextOnto(canvas, ctx, value, size);
+        Onto(canvas, ctx, value, size);
         cachedNames[value] = cachedNames[value] || {};
         cachedNames[value][size] = {
             width: canvas.width,
