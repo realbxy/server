@@ -954,19 +954,21 @@
     // Create an off-screen canvas to cache the sector grid
 let sectorCanvas = document.createElement("canvas");
 let sectorCtx = sectorCanvas.getContext("2d");
+let sectorCached = false; // Track if cache is generated
 
-// Function to pre-render the sectors ONCE
+// Function to pre-render the sectors (run when needed)
 function cacheSectors() {
     if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
-    
+
     sectorCanvas.width = mainCanvas.width;
     sectorCanvas.height = mainCanvas.height;
+    sectorCtx.clearRect(0, 0, sectorCanvas.width, sectorCanvas.height); // Clear before redrawing
 
     sectorCtx.save();
     sectorCtx.textAlign = "center";
     sectorCtx.textBaseline = "middle";
-    sectorCtx.font = "18px Arial"; // Use system font for better performance
-    sectorCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Slightly transparent white
+    sectorCtx.font = "18px Arial"; // Fast-rendering font
+    sectorCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Transparent white
 
     let x = border.left + 65,
         y = border.bottom - 65,
@@ -983,7 +985,7 @@ function cacheSectors() {
 
     // Draw sector grid lines
     sectorCtx.strokeStyle = "rgba(255, 255, 255, 0.25)"; // Lighter grid
-    sectorCtx.lineWidth = 2; // Slightly thicker lines for visibility
+    sectorCtx.lineWidth = 2; // Slightly thicker lines
 
     for (let j = 0; j <= 5; j++) {
         sectorCtx.beginPath();
@@ -998,15 +1000,29 @@ function cacheSectors() {
     }
 
     sectorCtx.restore();
+    sectorCached = true; // Mark sectors as cached
 }
 
-// Function to draw sectors using the cached version
+// Function to draw sectors and check if cache needs refreshing
 function drawSectors() {
     if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
-    mainCtx.drawImage(sectorCanvas, 0, 0); // Use pre-rendered sectors
+
+    if (!sectorCached) {
+        cacheSectors(); // Regenerate cache if it's missing
+    }
+
+    mainCtx.drawImage(sectorCanvas, 0, 0);
 }
 
-// Cache the sectors once so they don’t get redrawn every frame
+// Ensure cache is rebuilt when enabling sectors
+document.addEventListener("keydown", function(event) {
+    if (event.key === "M") { // Example: Press 'M' to toggle sectors
+        settings.sectors = !settings.sectors;
+        cacheSectors(); // Re-cache when toggling
+    }
+});
+
+// Initial cache
 cacheSectors();
 
     function drawMinimap() { 
