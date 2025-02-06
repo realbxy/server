@@ -784,11 +784,16 @@
     }
     function drawBorders() { // Rendered unusable when a server has coordinate scrambling enabled
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.mapBorders) return;
-        mainCtx.save();
-        mainCtx.strokeStyle = '#F00';
-        mainCtx.lineWidth = 20;
+         mainCtx.save();
+        mainCtx.strokeStyle = 'white'; // White border
+        mainCtx.lineWidth = 45; // Increased thickness
         mainCtx.lineCap = "round";
         mainCtx.lineJoin = "round";
+
+        // Apply glow effect
+        mainCtx.shadowColor = 'white';
+        mainCtx.shadowBlur = 20;
+
         mainCtx.beginPath();
         mainCtx.moveTo(border.left, border.top);
         mainCtx.lineTo(border.right, border.top);
@@ -796,6 +801,7 @@
         mainCtx.lineTo(border.left, border.bottom);
         mainCtx.closePath();
         mainCtx.stroke();
+
         mainCtx.restore();
     }
     function drawSectors() { // Rendered unusable when a server has coordinate scrambling enabled
