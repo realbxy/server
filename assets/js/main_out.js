@@ -963,17 +963,19 @@
     mainCtx.save();
     mainCtx.textAlign = "center";
     mainCtx.textBaseline = "middle";
-    mainCtx.font = "18px Arial"; // Fast-rendering font
+    mainCtx.font = "18px Arial"; // System font for better performance
     mainCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; 
 
-    // Draw sector labels (A1, B2, etc.)
+    // 🏷️ Draw sector labels (A1, B2, etc.) in the correct positions
     for (let j = 0; j < 5; j++) {
         for (let i = 0; i < 5; i++) {
-            mainCtx.fillText(letters[j] + (i + 1), x + w * j + w / 2, y + h * i + h / 2);
+            let labelX = x + w * i + w / 2; // Center horizontally
+            let labelY = y + h * j + h / 2; // Center vertically
+            mainCtx.fillText(letters[j] + (i + 1), labelX, labelY);
         }
     }
 
-    // Draw sector grid lines
+    // 📏 Draw sector grid lines
     mainCtx.strokeStyle = "rgba(255, 255, 255, 0.25)";
     mainCtx.lineWidth = 2;
 
