@@ -568,8 +568,8 @@
     function sendPlay(name, skinUrl) {
         let writer = new Writer(1);
         writer.setUint8(0x00);
-        writer.setStringUTF8(name || "");  // Allow empty nickname
-        writer.setStringUTF8(skinUrl || ""); // Ensure skin URL is sent
+        writer.setStringUTF8(name);
+        writer.setStringUTF8(skinUrl); // Add skin URL to the packet
         wsSend(writer);
     }
     function sendChat(text) {
@@ -954,22 +954,21 @@
     function drawSectors() { 
     if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
 
-    let x = border.left,
-        y = border.top,
+    let x = border.left + 65,
+        y = border.bottom - 65,
         letters = "ABCDE".split(""),
-        cols = 5, rows = 5, // Number of columns & rows
-        w = (border.right - border.left) / cols, // Sector width
-        h = (border.bottom - border.top) / rows; // Sector height
+        w = (border.right - 65 - x) / 5,
+        h = (border.top + 65 - y) / 5;
 
     mainCtx.save();
     mainCtx.textAlign = "center";
     mainCtx.textBaseline = "middle";
-    mainCtx.font = "24px Arial"; // Slightly bigger font for visibility
-    mainCtx.fillStyle = "rgba(255, 255, 255, 0.95)"; // Almost fully visible white text
+    mainCtx.font = "18px Arial"; // System font for better performance
+    mainCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; 
 
     // 🏷️ Draw sector labels (A1, B2, etc.) in the correct positions
-    for (let j = 0; j < rows; j++) {
-        for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < 5; j++) {
+        for (let i = 0; i < 5; i++) {
             let labelX = x + w * i + w / 2; // Center horizontally
             let labelY = y + h * j + h / 2; // Center vertically
             mainCtx.fillText(letters[j] + (i + 1), labelX, labelY);
@@ -977,26 +976,23 @@
     }
 
     // 📏 Draw sector grid lines
-    mainCtx.strokeStyle = "rgba(255, 255, 255, 0.2)"; // Softer lines
+    mainCtx.strokeStyle = "rgba(255, 255, 255, 0.25)";
     mainCtx.lineWidth = 2;
 
-    for (let j = 0; j <= rows; j++) {
+    for (let j = 0; j <= 5; j++) {
         mainCtx.beginPath();
         mainCtx.moveTo(x, y + h * j);
-        mainCtx.lineTo(x + w * cols, y + h * j);
+        mainCtx.lineTo(x + w * 5, y + h * j);
         mainCtx.stroke();
-    }
 
-    for (let i = 0; i <= cols; i++) {
         mainCtx.beginPath();
-        mainCtx.moveTo(x + w * i, y);
-        mainCtx.lineTo(x + w * i, y + h * rows);
+        mainCtx.moveTo(x + w * j, y);
+        mainCtx.lineTo(x + w * j, y + h * 5);
         mainCtx.stroke();
     }
 
     mainCtx.restore();
 }
-
 
 
     function drawMinimap() { 
@@ -1288,22 +1284,15 @@
                 this.setSkin(nameSkin[1]);
             } else this.name = value;
         }
-        setSkin(skin) {
-            if (!skin) return;
-            this.skin = skin;
-            
-            if (!loadedSkins[this.skin]) {
-                loadedSkins[this.skin] = new Image();
-                
-                // Check if it's an external URL
-                if (this.skin.startsWith("http")) {
-                    loadedSkins[this.skin].crossOrigin = "anonymous"; // Prevent CORS issues
+        setSkin(value) {
+            this.skin = value || this.skin;
+            if (this.skin) {
+                if (!loadedSkins[this.skin]) {
+                    loadedSkins[this.skin] = new Image();
                     loadedSkins[this.skin].src = this.skin;
-                } else {
-                    loadedSkins[this.skin].src = `./skins/${this.skin}.png`; // Local skins
                 }
             }
-        }        
+        }
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
             this.color = value;
