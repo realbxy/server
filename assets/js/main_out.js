@@ -568,8 +568,8 @@
     function sendPlay(name, skinUrl) {
         let writer = new Writer(1);
         writer.setUint8(0x00);
-        writer.setStringUTF8(name);
-        writer.setStringUTF8(skinUrl); // Ensure skin URL is sent
+        writer.setStringUTF8(name || "");  // Allow empty nickname
+        writer.setStringUTF8(skinUrl || ""); // Ensure skin URL is sent
         wsSend(writer);
     }
     function sendChat(text) {
@@ -1288,14 +1288,14 @@
                 this.setSkin(nameSkin[1]);
             } else this.name = value;
         }
-        setSkin(value) {
-            if (!value) return;
-            this.skin = value;
-        
+        setSkin(skin) {
+            if (!skin) return;
+            this.skin = skin;
+            
             if (!loadedSkins[this.skin]) {
                 loadedSkins[this.skin] = new Image();
                 
-                // Ensure it's an external link (like Imgur) instead of local paths
+                // Check if it's an external URL
                 if (this.skin.startsWith("http")) {
                     loadedSkins[this.skin].crossOrigin = "anonymous"; // Prevent CORS issues
                     loadedSkins[this.skin].src = this.skin;
@@ -1303,7 +1303,7 @@
                     loadedSkins[this.skin].src = `./skins/${this.skin}.png`; // Local skins
                 }
             }
-        }
+        }        
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
             this.color = value;
