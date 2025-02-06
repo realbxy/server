@@ -954,21 +954,19 @@
     // Create an off-screen canvas to cache the sector grid
 let sectorCanvas = document.createElement("canvas");
 let sectorCtx = sectorCanvas.getContext("2d");
-let sectorCached = false; // Track if cache is generated
 
-// Function to pre-render the sectors (run when needed)
+// Function to pre-render the sectors ONCE
 function cacheSectors() {
     if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
-
+    
     sectorCanvas.width = mainCanvas.width;
     sectorCanvas.height = mainCanvas.height;
-    sectorCtx.clearRect(0, 0, sectorCanvas.width, sectorCanvas.height); // Clear before redrawing
 
     sectorCtx.save();
     sectorCtx.textAlign = "center";
     sectorCtx.textBaseline = "middle";
-    sectorCtx.font = "18px Arial"; // Fast-rendering font
-    sectorCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Transparent white
+    sectorCtx.font = "18px Arial"; // Use system font for better performance
+    sectorCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Slightly transparent white
 
     let x = border.left + 65,
         y = border.bottom - 65,
@@ -985,7 +983,7 @@ function cacheSectors() {
 
     // Draw sector grid lines
     sectorCtx.strokeStyle = "rgba(255, 255, 255, 0.25)"; // Lighter grid
-    sectorCtx.lineWidth = 2; // Slightly thicker lines
+    sectorCtx.lineWidth = 2; // Slightly thicker lines for visibility
 
     for (let j = 0; j <= 5; j++) {
         sectorCtx.beginPath();
@@ -1000,29 +998,15 @@ function cacheSectors() {
     }
 
     sectorCtx.restore();
-    sectorCached = true; // Mark sectors as cached
 }
 
-// Function to draw sectors and check if cache needs refreshing
+// Function to draw sectors using the cached version
 function drawSectors() {
     if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
-
-    if (!sectorCached) {
-        cacheSectors(); // Regenerate cache if it's missing
-    }
-
-    mainCtx.drawImage(sectorCanvas, 0, 0);
+    mainCtx.drawImage(sectorCanvas, 0, 0); // Use pre-rendered sectors
 }
 
-// Ensure cache is rebuilt when enabling sectors
-document.addEventListener("keydown", function(event) {
-    if (event.key === "M") { // Example: Press 'M' to toggle sectors
-        settings.sectors = !settings.sectors;
-        cacheSectors(); // Re-cache when toggling
-    }
-});
-
-// Initial cache
+// Cache the sectors once so they don’t get redrawn every frame
 cacheSectors();
 
     function drawMinimap() { 
@@ -1331,7 +1315,7 @@ cacheSectors();
         draw(ctx) {
             ctx.save();
             this.drawShape(ctx);
-            this.(ctx);
+            this.drawText(ctx);
             ctx.restore();
         }
         drawShape(ctx) {
@@ -1380,16 +1364,16 @@ cacheSectors();
             }
             if (showCellBorder) this.s += ctx.lineWidth / 2 - 2;
         }
-        (ctx) {
+        drawText(ctx) {
             if (this.s < 20 || this.jagged) return;
             if (settings.showMass && (cells.mine.indexOf(this.id) !== -1 || !cells.mine.length) && !this.food/* && !this.ejected*/) {
                 let mass = (~~(this.s * this.s / 100)).toString();
                 if (this.name && settings.showNames) {
-                    (ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
+                    drawText(ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
                     let y = this.y + Math.max(this.s / 4.5, this.nameSize / 1.5);
-                    (ctx, 1, this.x, y, this.nameSize / 2, this.drawNameSize / 2, mass);
-                } else (ctx, 1, this.x, this.y, this.nameSize / 2, this.drawNameSize / 2, mass);
-            } else if (this.name && settings.showNames) (ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
+                    drawText(ctx, 1, this.x, y, this.nameSize / 2, this.drawNameSize / 2, mass);
+                } else drawText(ctx, 1, this.x, this.y, this.nameSize / 2, this.drawNameSize / 2, mass);
+            } else if (this.name && settings.showNames) drawText(ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
         }
     }
     // 2-var draw-stay cache
@@ -1421,7 +1405,7 @@ cacheSectors();
         
         (ctx.lineWidth !== 1) && ctx.strokeText(text, 0, 0);
         ctx.fillText(text, 0, 0);
-    }
+    }    
     function drawRaw(ctx, x, y, text, size) {
         ctx.font = `${size}px Ubuntu`;
         ctx.textBaseline = "middle";
@@ -1436,7 +1420,7 @@ cacheSectors();
     function newNameCache(value, size) {
         let canvas = document.createElement("canvas"),
             ctx = canvas.getContext("2d");
-        Onto(canvas, ctx, value, size);
+        drawTextOnto(canvas, ctx, value, size);
         cachedNames[value] = cachedNames[value] || {};
         cachedNames[value][size] = {
             width: canvas.width,
