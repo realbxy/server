@@ -951,50 +951,64 @@
     
         mainCtx.restore();
     }
-    function drawSectors() { 
-        if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
+    // Create an off-screen canvas to cache the sector grid
+let sectorCanvas = document.createElement("canvas");
+let sectorCtx = sectorCanvas.getContext("2d");
+
+// Function to pre-render the sectors ONCE
+function cacheSectors() {
+    if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
     
-        let x = border.left + 65,
-            y = border.bottom - 65,
-            letters = "ABCDE".split(""),
-            w = (border.right - 65 - x) / 5,
-            h = (border.top + 65 - y) / 5;
-    
-        mainCtx.save();
-        mainCtx.textAlign = "center";
-        mainCtx.textBaseline = "middle";
-    
-        // Adjust the font size and use a clear, bold font
-        mainCtx.font = `${w * 0.4}px Poppins, Arial, sans-serif`; 
-        mainCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Slightly transparent white
-        mainCtx.shadowColor = "rgba(255, 255, 255, 0.5)";
-        mainCtx.shadowBlur = 2; // Reduced glow to avoid distortion
-    
-        // Loop through sectors and draw the labels (A1, B2, etc.)
-        for (let j = 0; j < 5; j++) {
-            for (let i = 0; i < 5; i++) {
-                mainCtx.fillText(letters[j] + (i + 1), x + w * j + w / 2, y + h * i + h / 2);
-            }
+    sectorCanvas.width = mainCanvas.width;
+    sectorCanvas.height = mainCanvas.height;
+
+    sectorCtx.save();
+    sectorCtx.textAlign = "center";
+    sectorCtx.textBaseline = "middle";
+    sectorCtx.font = "18px Arial"; // Use system font for better performance
+    sectorCtx.fillStyle = "rgba(255, 255, 255, 0.85)"; // Slightly transparent white
+
+    let x = border.left + 65,
+        y = border.bottom - 65,
+        letters = "ABCDE".split(""),
+        w = (border.right - 65 - x) / 5,
+        h = (border.top + 65 - y) / 5;
+
+    // Draw sector labels (A1, B2, etc.)
+    for (let j = 0; j < 5; j++) {
+        for (let i = 0; i < 5; i++) {
+            sectorCtx.fillText(letters[j] + (i + 1), x + w * j + w / 2, y + h * i + h / 2);
         }
-    
-        // Draw grid lines with less opacity for a cleaner look
-        mainCtx.strokeStyle = "rgba(255, 255, 255, 0.25)"; 
-        mainCtx.lineWidth = 1.5;
-    
-        for (let j = 0; j <= 5; j++) {
-            mainCtx.beginPath();
-            mainCtx.moveTo(x, y + h * j);
-            mainCtx.lineTo(x + w * 5, y + h * j);
-            mainCtx.stroke();
-    
-            mainCtx.beginPath();
-            mainCtx.moveTo(x + w * j, y);
-            mainCtx.lineTo(x + w * j, y + h * 5);
-            mainCtx.stroke();
-        }
-    
-        mainCtx.restore();
     }
+
+    // Draw sector grid lines
+    sectorCtx.strokeStyle = "rgba(255, 255, 255, 0.25)"; // Lighter grid
+    sectorCtx.lineWidth = 2; // Slightly thicker lines for visibility
+
+    for (let j = 0; j <= 5; j++) {
+        sectorCtx.beginPath();
+        sectorCtx.moveTo(x, y + h * j);
+        sectorCtx.lineTo(x + w * 5, y + h * j);
+        sectorCtx.stroke();
+
+        sectorCtx.beginPath();
+        sectorCtx.moveTo(x + w * j, y);
+        sectorCtx.lineTo(x + w * j, y + h * 5);
+        sectorCtx.stroke();
+    }
+
+    sectorCtx.restore();
+}
+
+// Function to draw sectors using the cached version
+function drawSectors() {
+    if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
+    mainCtx.drawImage(sectorCanvas, 0, 0); // Use pre-rendered sectors
+}
+
+// Cache the sectors once so they don’t get redrawn every frame
+cacheSectors();
+
     function drawMinimap() { 
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.showMinimap) return;
     
