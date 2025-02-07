@@ -42,18 +42,26 @@
         // Function to update the skin preview dynamically
         function updateActiveSkin(skinUrl) {
             const activeSkinDiv = document.getElementById('active_skin');
-            activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
+            if (skinUrl) {
+                activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
+            } else {
+                activeSkinDiv.style.backgroundImage = 'none';
+            }
         }
 
         // Listen for input changes and update the preview
         document.getElementById('skin_url').addEventListener('input', function() {
-            updateActiveSkin(this.value.trim());
+            updateActiveSkin(this.value);
         });
+
+        function setActiveSkin(skinUrl) {
+            updateActiveSkin(skinUrl);
+        }
 
         // Modify the play function to send the skin URL along with the player name
         wHandle.play = function(arg) {
-            let skinUrl = document.getElementById('skin_url').value.trim(); // Get skin URL from input
-            sendPlay(arg, skinUrl); // Send name and skin URL
+            let skinUrl = document.getElementById('skin_url').value; // Get skin URL input
+            sendPlay(arg, skinUrl); // Pass skin URL to the server
             hideOverlay();
         };
     </script>
@@ -99,9 +107,6 @@
                 <div class="form-group">
                     <label for="skin_url">Enter Skin URL:</label>
                     <input id="skin_url" class="form-control" placeholder="Paste an image URL" />
-                </div>
-                <div class="form-group">
-                    <input id="skin_url" class="form-control" placeholder="Enter skin URL" />
                 </div>
                 <div class="form-group">
                     <div class="mb-10">
