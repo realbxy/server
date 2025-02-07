@@ -42,16 +42,14 @@
         // Function to update the skin preview dynamically
         function updateActiveSkin(skinUrl) {
             const activeSkinDiv = document.getElementById('active_skin');
-            if (skinUrl) {
-                activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
-            } else {
-                activeSkinDiv.style.backgroundImage = 'none';
-            }
+            activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
+            activeSkinDiv.style.backgroundSize = 'cover'; // Ensure it fills the circle
         }
 
         // Listen for input changes and update the preview
         document.getElementById('skin_url').addEventListener('input', function() {
-            updateActiveSkin(this.value);
+            const skinUrl = this.value.trim();
+            updateActiveSkin(skinUrl);
         });
 
         function setActiveSkin(skinUrl) {
@@ -60,8 +58,9 @@
 
         // Modify the play function to send the skin URL along with the player name
         wHandle.play = function(arg) {
-            let skinUrl = document.getElementById('skin_url').value; // Get skin URL input
-            sendPlay(arg, skinUrl); // Pass skin URL to the server
+            let skinUrl = document.getElementById('skin_url').value.trim(); // Get skin URL
+            if (!skinUrl.startsWith("http")) skinUrl = ""; // Ensure it's a valid URL
+            sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
             hideOverlay();
         };
     </script>
