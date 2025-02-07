@@ -565,10 +565,12 @@
         writer._b.push(0, 0, 0, 0);
         wsSend(writer);
     }
-    function sendPlay(name) {
+    function sendPlay(name, skinUrl) {
         let writer = new Writer(1);
-        writer.setUint8(0x00);
-        writer.setStringUTF8(name);
+        writer.setUint8(0x00); // Play command
+        writer.setStringUTF8(name); // Send player name
+        writer.setStringUTF8(skinUrl); // Send skin URL
+    
         wsSend(writer);
     }
     function sendChat(text) {
@@ -1085,10 +1087,25 @@
             } else this.name = value;
         }
         setSkin(value) {
-            this.skin = (value && value[0] === "%" ? value.slice(1) : value) || this.skin;
-            if (this.skin == null || loadedSkins[this.skin]) return;
-            loadedSkins[this.skin] = new Image();
-            loadedSkins[this.skin].src = `${SKIN_URL}${this.skin}.png`;
+            if (!value) return;
+        
+            // Check if value is a valid URL
+            let isUrl = value.startsWith("http://") || value.startsWith("https://");
+        
+            if (isUrl) {
+                this.skin = value; // Use direct URL
+            } else {
+                this.skin = `${SKIN_URL}${value}.png`; // Use local skin from directory
+            }
+        
+            // Load and cache the skin if not already loaded
+            if (!loadedSkins[this.skin]) {
+                let img = new Image();
+                img.src = this.skin;
+                img.onload = () => console.log(`Skin loaded: ${this.skin}`);
+                img.onerror = () => console.warn(`Failed to load skin: ${this.skin}`);
+                loadedSkins[this.skin] = img;
+            }
         }
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
@@ -1103,14 +1120,21 @@
         }
         drawShape(ctx) {
             if (settings.hideFood && this.food) return;
+        
+            // Set cell color
             ctx.fillStyle = settings.showColor ? this.color : Cell.prototype.color;
+            
             let color = String($("#cellBorderColor").val());
             ctx.strokeStyle = color.length === 3 || color.length === 6 ? "#" + color : settings.showColor ? this.sColor : Cell.prototype.sColor;
             ctx.lineWidth = this.jagged ? 12 : Math.max(~~(this.s / 50), 10);
-            let showCellBorder = settings.cellBorders && !this.food && !this.ejected && 20 < this.s;
+        
+            let showCellBorder = settings.cellBorders && !this.food && !this.ejected && this.s > 20;
             if (showCellBorder) this.s -= ctx.lineWidth / 2 - 2;
+        
+            // Draw shape
             ctx.beginPath();
             if (this.jagged) ctx.lineJoin = "miter";
+            
             if (settings.jellyPhysics && this.points.length) {
                 let point = this.points[0];
                 ctx.moveTo(point.x, point.y);
@@ -1125,28 +1149,40 @@
                     ctx.lineTo(this.x + dist * Math.sin(angle), this.y + dist * Math.cos(angle));
                 }
                 ctx.lineTo(this.x, this.y + this.s + 3);
-            } else ctx.arc(this.x, this.y, this.s, 0, PI_2, false);
+            } else {
+                ctx.arc(this.x, this.y, this.s, 0, PI_2, false);
+            }
+            
             ctx.closePath();
-            if (settings.transparency) ctx.globalAlpha = .75;
+            
+            // Transparency handling
+            if (settings.transparency) ctx.globalAlpha = 0.75;
             else if (this.destroyed) ctx.globalAlpha = Math.max(200 - Date.now() + this.dead, 0) / 100;
             else ctx.globalAlpha = Math.min(Date.now() - this.born, 200) / 100;
+        
             if (showCellBorder) ctx.stroke();
             ctx.fill();
+        
+            // Draw skin if available
             if (settings.showSkins && this.skin) {
                 let skin = loadedSkins[this.skin];
+        
                 if (skin && skin.complete && skin.width && skin.height) {
                     ctx.save();
                     ctx.clip();
                     scaleBack(ctx);
+        
                     let sScaled = this.s * camera.z;
                     if (settings.jellyPhysics) sScaled += 3;
-                    ctx.drawImage(skin, this.x * camera.z - sScaled, this.y * camera.z - sScaled, sScaled *= 2, sScaled);
+        
+                    ctx.drawImage(skin, this.x * camera.z - sScaled, this.y * camera.z - sScaled, sScaled * 2, sScaled * 2);
                     scaleForth(ctx);
                     ctx.restore();
                 }
             }
+        
             if (showCellBorder) this.s += ctx.lineWidth / 2 - 2;
-        }
+        }        
         drawText(ctx) {
             if (this.s < 20 || this.jagged) return;
             if (settings.showMass && (cells.mine.indexOf(this.id) !== -1 || !cells.mine.length) && !this.food/* && !this.ejected*/) {
@@ -1166,17 +1202,17 @@
         for (let i in cachedNames) {
             for (let j in cachedNames[i])
                 if (syncAppStamp - cachedNames[i][j].accessTime >= 5000) delete cachedNames[i][j];
-            if (cachedNames[i] === {}) delete cachedNames[i];
+            if (Object.keys(cachedNames[i]).length === 0) delete cachedNames[i];
         }
         for (let i in cachedMass)
             if (syncAppStamp - cachedMass[i].accessTime >= 5000) delete cachedMass[i];
     }
     function drawTextOnto(canvas, ctx, text, size) {
-        ctx.font = `${size}px Ubuntu`;
+        ctx.font = `${size}px 'Hind Madurai', sans-serif`;
         ctx.lineWidth = settings.showTextOutline ? Math.max(~~(size / 10), 2) : 2;
         canvas.width = ctx.measureText(text).width + 2 * ctx.lineWidth;
         canvas.height = 4 * size;
-        ctx.font = `${size}px Ubuntu`;
+        ctx.font = `${size}px 'Hind Madurai', sans-serif`;
         ctx.lineWidth = settings.showTextOutline ? Math.max(~~(size / 10), 2) : 2;
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
@@ -1186,7 +1222,7 @@
         ctx.translate(canvas.width / 2, 2 * size);
         (ctx.lineWidth !== 1) && ctx.strokeText(text, 0, 0);
         ctx.fillText(text, 0, 0);
-    }
+    }    
     function drawRaw(ctx, x, y, text, size) {
         ctx.font = `${size}px Ubuntu`;
         ctx.textBaseline = "middle";
