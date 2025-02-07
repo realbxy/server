@@ -569,8 +569,8 @@
         let writer = new Writer(1);
         writer.setUint8(0x00); // Play command
         writer.setStringUTF8(name); // Send player name
-        writer.setStringUTF8(skinUrl); // Send skin URL
-    
+        writer.setStringUTF8(skinUrl || ""); // Send skin URL, or empty string if none is provided
+
         wsSend(writer);
     }
     function sendChat(text) {
@@ -1088,19 +1088,20 @@
         }
         setSkin(value) {
             if (!value) return;
-        
-            // Check if value is a valid URL
+
+            // Determine if value is a valid URL
             let isUrl = value.startsWith("http://") || value.startsWith("https://");
-        
+
             if (isUrl) {
-                this.skin = value; // Use direct URL
+                this.skin = value; // Direct URL skin
             } else {
-                this.skin = `${SKIN_URL}${value}.png`; // Use local skin from directory
+                this.skin = `${SKIN_URL}${value}.png`; // Local skin
             }
-        
-            // Load and cache the skin if not already loaded
+
+            // Ensure the skin is loaded properly
             if (!loadedSkins[this.skin]) {
                 let img = new Image();
+                img.crossOrigin = "anonymous"; // Allow cross-origin image loading
                 img.src = this.skin;
                 img.onload = () => console.log(`Skin loaded: ${this.skin}`);
                 img.onerror = () => console.warn(`Failed to load skin: ${this.skin}`);
