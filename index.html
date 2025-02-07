@@ -39,28 +39,21 @@
         }
         window.addEventListener("keydown", keydown);
 
+        // Function to update the skin preview dynamically
         function updateActiveSkin(skinUrl) {
             const activeSkinDiv = document.getElementById('active_skin');
             activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
         }
 
-        // Add event listener to the skin URL input
+        // Listen for input changes and update the preview
         document.getElementById('skin_url').addEventListener('input', function() {
-            const skinUrl = this.value;
-            updateActiveSkin(skinUrl);
+            updateActiveSkin(this.value.trim());
         });
 
-        // Example function to set the active skin (you can replace this with your actual logic)
-        function setActiveSkin(skinUrl) {
-            updateActiveSkin(skinUrl);
-        }
-
-        // Call setActiveSkin with the initial skin URL (replace with the actual initial skin URL if needed)
-        setActiveSkin('https://example.com/skins/doge.png');
-
+        // Modify the play function to send the skin URL along with the player name
         wHandle.play = function(arg) {
-            let skinUrl = document.getElementById('skin_url').value; // Get the skin URL from the input
-            sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
+            let skinUrl = document.getElementById('skin_url').value.trim(); // Get skin URL from input
+            sendPlay(arg, skinUrl); // Send name and skin URL
             hideOverlay();
         };
     </script>
@@ -101,6 +94,11 @@
                         <option value="216.146.25.15:443">Test Server</option>
                     </select>
                     <br clear="both" />
+                </div>
+                <!-- Skin URL Input -->
+                <div class="form-group">
+                    <label for="skin_url">Enter Skin URL:</label>
+                    <input id="skin_url" class="form-control" placeholder="Paste an image URL" />
                 </div>
                 <div class="form-group">
                     <input id="skin_url" class="form-control" placeholder="Enter skin URL" />
