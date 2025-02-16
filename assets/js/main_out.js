@@ -136,7 +136,12 @@
             let s = "",
                 b;
             while ((b = this.view.getUint8(this._o++)) !== 0) s += String.fromCharCode(b);
-            return decodeURIComponent(escape(s));
+            try {
+                return decodeURIComponent(escape(s));
+            } catch (e) {
+                console.error("Error decoding URI component:", e);
+                return s;
+            }
         }
     }
     class Logger {
