@@ -571,6 +571,7 @@
         writer.setStringUTF8(name); // Send player name
         writer.setStringUTF8(skinUrl || ""); // Send skin URL, or empty string if none is provided
 
+        console.log(`Sending play command with name: ${name} and skin URL: ${skinUrl}`);
         wsSend(writer);
     }
     function sendChat(text) {
@@ -1098,6 +1099,8 @@
                 this.skin = `${SKIN_URL}${value}.png`; // Local skin
             }
 
+            console.log(`Setting skin to: ${this.skin}`);
+
             // Ensure the skin is loaded properly
             if (!loadedSkins[this.skin]) {
                 let img = new Image();
@@ -1135,7 +1138,6 @@
             // Draw shape
             ctx.beginPath();
             if (this.jagged) ctx.lineJoin = "miter";
-            
             if (settings.jellyPhysics && this.points.length) {
                 let point = this.points[0];
                 ctx.moveTo(point.x, point.y);
@@ -1153,7 +1155,6 @@
             } else {
                 ctx.arc(this.x, this.y, this.s, 0, PI_2, false);
             }
-            
             ctx.closePath();
             
             // Transparency handling
@@ -1167,7 +1168,6 @@
             // Draw skin if available
             if (settings.showSkins && this.skin) {
                 let skin = loadedSkins[this.skin];
-        
                 if (skin && skin.complete && skin.width && skin.height) {
                     ctx.save();
                     ctx.clip();
@@ -1176,6 +1176,7 @@
                     let sScaled = this.s * camera.z;
                     if (settings.jellyPhysics) sScaled += 3;
         
+                    console.log(`Drawing skin: ${this.skin} at position (${this.x}, ${this.y}) with size ${sScaled}`);
                     ctx.drawImage(skin, this.x * camera.z - sScaled, this.y * camera.z - sScaled, sScaled * 2, sScaled * 2);
                     scaleForth(ctx);
                     ctx.restore();
@@ -1203,12 +1204,14 @@
         cachedMass  = {};
     function cacheCleanup() {
         for (let i in cachedNames) {
-            for (let j in cachedNames[i])
+            for (let j in cachedNames[i]) {
                 if (syncAppStamp - cachedNames[i][j].accessTime >= 5000) delete cachedNames[i][j];
+            }
             if (Object.keys(cachedNames[i]).length === 0) delete cachedNames[i];
         }
-        for (let i in cachedMass)
+        for (let i in cachedMass) {
             if (syncAppStamp - cachedMass[i].accessTime >= 5000) delete cachedMass[i];
+        }
     }
     function drawTextOnto(canvas, ctx, text, size) {
         ctx.font = `${size}px 'Hind Madurai', sans-serif`;
@@ -1223,9 +1226,9 @@
         ctx.fillStyle = "#" + (!string ? "FFF" : string);
         ctx.strokeStyle = "#000";
         ctx.translate(canvas.width / 2, 2 * size);
-        (ctx.lineWidth !== 1) && ctx.strokeText(text, 0, 0);
+        if (ctx.lineWidth !== 1) ctx.strokeText(text, 0, 0);
         ctx.fillText(text, 0, 0);
-    }    
+    }
     function drawRaw(ctx, x, y, text, size) {
         ctx.font = `${size}px Ubuntu`;
         ctx.textBaseline = "middle";
@@ -1254,8 +1257,7 @@
     }
     function newMassCache(size) {
         let canvases = {
-            "0": {}, "1": {}, "2": {}, "3": {}, "4": {},
-            "5": {}, "6": {}, "7": {}, "8": {}, "9": {}
+            "0": {}, "1": {}, "2": {}, "3": {}, "4": {}, "5": {}, "6": {}, "7": {}, "8": {}, "9": {}
         };
         for (let value in canvases) {
             let canvas = canvases[value].canvas = document.createElement("canvas"),
@@ -1279,14 +1281,16 @@
     function getNameCache(value, size) {
         if (!cachedNames[value]) return newNameCache(value, size);
         let sizes = Object.keys(cachedNames[value]);
-        for (let i = 0, l = sizes.length; i < l; i++)
+        for (let i = 0, l = sizes.length; i < l; i++) {
             if (toleranceTest(size, sizes[i], size / 4)) return cachedNames[value][sizes[i]];
+        }
         return newNameCache(value, size);
     }
     function getMassCache(size) {
         let sizes = Object.keys(cachedMass);
-        for (let i = 0, l = sizes.length; i < l; i++)
+        for (let i = 0, l = sizes.length; i < l; i++) {
             if (toleranceTest(size, sizes[i], size / 4)) return cachedMass[sizes[i]];
+        }
         return newMassCache(size);
     }
     function drawText(ctx, isMass, x, y, size, drawSize, value) {
@@ -1298,7 +1302,7 @@
             cache.accessTime = syncAppStamp;
             let canvases = cache.canvases,
                 correctionScale = drawSize / cache.size,
-                width = 0; // Calculate width
+                width = 0;
             for (let i = 0; i < value.length; i++) width += canvases[value[i]].width - 2 * cache.lineWidth;
             ctx.scale(correctionScale, correctionScale);
             x /= correctionScale;
@@ -1655,7 +1659,10 @@
         });
     };
     wHandle.play = function(arg) {
-        sendPlay(arg);
+        let skinUrl = document.getElementById('skin_url').value.trim(); // Get skin URL
+        if (!skinUrl.startsWith("http")) skinUrl = ""; // Ensure it's a valid URL
+        console.log(`Playing with skin URL: ${skinUrl}`);
+        sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
         hideOverlay();
     };
     wHandle.onload = init;
