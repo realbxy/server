@@ -115,12 +115,18 @@
             return this.view.getInt8(this._o++, this._e);
         }
         getUint16() {
+            if (this._o + 2 > this.view.byteLength) {
+                throw new RangeError("Offset is outside the bounds of the DataView");
+            }
             return this.view.getUint16((this._o += 2) - 2, this._e);
         }
         getInt16() {
             return this.view.getInt16((this._o += 2) - 2, this._e);
         }
         getUint32() {
+            if (this._o + 4 > this.view.byteLength) {
+                throw new RangeError("Offset is outside the bounds of the DataView");
+            }
             return this.view.getUint32((this._o += 4) - 4, this._e);
         }
         getInt32() {
