@@ -47,9 +47,11 @@
         }
 
         // Listen for input changes and update the preview
-        document.getElementById('skin_url').addEventListener('input', function() {
-            const skinUrl = this.value.trim();
-            updateActiveSkin(skinUrl);
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('skin_url').addEventListener('input', function() {
+                const skinUrl = this.value.trim();
+                updateActiveSkin(skinUrl);
+            });
         });
 
         function setActiveSkin(skinUrl) {
