@@ -1179,11 +1179,13 @@
                     ctx.drawImage(skin, this.x * camera.z - sScaled, this.y * camera.z - sScaled, sScaled * 2, sScaled * 2);
                     scaleForth(ctx);
                     ctx.restore();
+                } else {
+                    console.warn(`Skin not loaded or invalid: ${this.skin}`);
                 }
             }
         
             if (showCellBorder) this.s += ctx.lineWidth / 2 - 2;
-        }        
+        }
         drawText(ctx) {
             if (this.s < 20 || this.jagged) return;
             if (settings.showMass && (cells.mine.indexOf(this.id) !== -1 || !cells.mine.length) && !this.food/* && !this.ejected*/) {
