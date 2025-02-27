@@ -1,202 +1,286 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="An agar.io client made for MultiOgar based servers.">
-    <meta name="keywords" content="agario, agar, io, cell, cells, virus, bacteria, blob, game, games, web game, html5, fun, flash">
-    <meta name="robots" content="index, follow">
-    <meta property="og:image" content="http://agar.io/img/1200x630.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta name="viewport" content="minimal-ui, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>MultiOgar Client</title>
-    <link id="favicon" rel="icon" type="image/png" href="assets/img/favicon.png" />
-    <link href="https://fonts.googleapis.com/css?family=Ubuntu:700" rel="stylesheet" type="text/css">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/server/assets/css/index.css" rel="stylesheet">
-    <script src="assets/js/jquery-1.11.3.min.js"></script>
-    <script src="/server/assets/js/main_out.js"></script>
-    <script>
-        // Split macros
-        function split() {
-            $("body").trigger($.Event("keydown", {
-                keyCode: 32
-            }));
-            $("body").trigger($.Event("keyup", {
-                keyCode: 32
-            }));
-        }
-        function keydown(e) {
-            if (e.keyCode === 16)
-                for (let i = 0; i < 16; i++) setTimeout(split, 50 * i);
-            if (e.keyCode === 65)
-                for (let i = 0; i < 3; i++) setTimeout(split, 50 * i);
-            if (e.keyCode === 68)
-                for (let i = 0; i < 2; i++) setTimeout(split, 50 * i);
-        }
-        window.addEventListener("keydown", keydown);
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An agar.io client made for MultiOgar based servers.">
+  <meta name="keywords" content="agario, agar, io, cell, cells, virus, bacteria, blob, game, games, web game, html5, fun, flash">
+  <meta name="robots" content="index, follow">
+  <meta property="og:image" content="http://agar.io/img/1200x630.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="viewport" content="minimal-ui, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>MultiOgar Client</title>
 
-        // Function to update the skin preview dynamically
-        function updateActiveSkin(skinUrl) {
-            const activeSkinDiv = document.getElementById('active_skin');
-            activeSkinDiv.style.backgroundImage = `url(${skinUrl})`;
-            activeSkinDiv.style.backgroundSize = 'cover'; // Ensure it fills the circle
-        }
+  <!-- Favicon -->
+  <link id="favicon" rel="icon" type="image/png" href="assets/img/favicon.png" />
 
-        // Listen for input changes and update the preview
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('skin_url').addEventListener('input', function() {
-                const skinUrl = this.value.trim();
-                updateActiveSkin(skinUrl);
-            });
+  <!-- Fonts & Bootstrap -->
+  <link href="https://fonts.googleapis.com/css?family=Ubuntu:700" rel="stylesheet" type="text/css">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha512-2NfSAv7z3Ha2QCrgKXfzyv9XxvPWlsNt8GnnRBepNsL7IQps6vwX8SkSRymr4Uo+RHmf1LMf8ijgr0nD7E6l3w=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Custom CSS -->
+  <link href="/server/assets/css/index.css" rel="stylesheet">
+
+  <!-- jQuery and your main script -->
+  <script src="server/assets/js/jquery-1.11.3.min.js"></script>
+  <script src="/server/assets/js/main_out.js"></script>
+
+  <script>
+    // Split macros (unchanged)
+    function split() {
+      $("body").trigger($.Event("keydown", { keyCode: 32 }));
+      $("body").trigger($.Event("keyup", { keyCode: 32 }));
+    }
+    function keydown(e) {
+      if (e.keyCode === 16)
+        for (let i = 0; i < 16; i++) setTimeout(split, 50 * i);
+      if (e.keyCode === 65)
+        for (let i = 0; i < 3; i++) setTimeout(split, 50 * i);
+      if (e.keyCode === 68)
+        for (let i = 0; i < 2; i++) setTimeout(split, 50 * i);
+    }
+    window.addEventListener("keydown", keydown);
+
+    // ORIGINAL: toggles #settings (we'll keep it, though we do a new approach below)
+    document.addEventListener('DOMContentLoaded', function() {
+      const oldSettingsBtn = document.getElementById('settings-btn');
+      if (oldSettingsBtn) {
+        oldSettingsBtn.addEventListener('click', function() {
+          const settingsDiv = document.getElementById('settings');
+          settingsDiv.style.display = (settingsDiv.style.display === 'block') ? 'none' : 'block';
         });
-
-        function setActiveSkin(skinUrl) {
-            updateActiveSkin(skinUrl);
-        }
-
-        // Modify the play function to send the skin URL along with the player name
-        wHandle.play = function(arg) {
-            let skinUrl = document.getElementById('skin_url').value.trim(); // Get skin URL
-            if (!skinUrl.startsWith("http")) skinUrl = ""; // Ensure it's a valid URL
-            console.log(`Playing with skin URL: ${skinUrl}`);
-            sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
-            hideOverlay();
-        };
-
-        // Function to set a cookie with SameSite=None and Secure attributes
-        function setCookie(name, value, days) {
-            let expires = "";
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = "; expires=" + date.toUTCString();
-            }
-            document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=None; Secure";
-        }
-
-        // Example usage
-        setCookie('name', 'value', 7);
-    </script>
+      }
+    });
+  </script>
 </head>
 <body>
-    <div class="modal fade" id="inPageModal" role="dialog">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 id="inPageModalTitle" class="modal-title">Failed to Load</h4>
-                </div>
-                <div id="inPageModalBody" class="modal-body">
-                    <p>Failed to load. Please check your connection!</p>
-                    <div class="center">
-                        <div class="loader"></div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                </div>
+  <!-- In-page modal (unchanged) -->
+  <div class="modal fade" id="inPageModal" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">×</button>
+          <h4 id="inPageModalTitle" class="modal-title">Failed to Load</h4>
+        </div>
+        <div id="inPageModalBody" class="modal-body">
+          <p>Failed to load. Please check your connection!</p>
+          <div class="center">
+            <div class="loader"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlays wrapper (unchanged) -->
+  <div id="overlays">
+    <!-- MAIN container for the menu -->
+    <div id="helloDialog">
+      <!-- Menu bar with icons -->
+      <div class="menu-bar">
+        <!-- Each button “opens” a sub-container overlay (same location) -->
+        <button id="settings-btn" class="menu-icon tab-btn" data-target="sub-settings">
+          <i class="fas fa-cog"></i>
+        </button>
+        <button id="edit-btn" class="menu-icon tab-btn" data-target="sub-edit">
+          <i class="fas fa-pen"></i>
+        </button>
+        <button id="paint-btn" class="menu-icon tab-btn" data-target="sub-palette">
+          <i class="fas fa-palette"></i>
+        </button>
+        <button id="chat-btn" class="menu-icon tab-btn" data-target="sub-chat">
+          <i class="fas fa-comments"></i>
+        </button>
+        <button id="note-btn" class="menu-icon tab-btn" data-target="sub-note">
+          <i class="fas fa-sticky-note"></i>
+        </button>
+      </div>
+
+      <!-- The main content (Nickname, Tag, etc.) -->
+      <div class="content">
+        <div class="skin-preview"></div>
+        
+        <!-- We changed the layout so Nick + Tag are side-by-side, Skin Link below -->
+        <div class="input-row">
+          <input id="nick" class="vanis-input form-control save" data-box-id="0" placeholder="Nickname" maxlength="30">
+          <input type="text" id="tag" class="vanis-input form-control" placeholder="Tag">
+        </div>
+        <div class="input-row">
+          <input type="text" id="skin-link" class="vanis-input form-control" placeholder="Skin Link">
+        </div>
+
+        <div class="controls">
+          <select id="gamemode" class="form-control" onchange="setServer($(this).val());" required>
+            <option value="" disabled selected>Servers:</option>
+            <option value="127.0.0.1:443">Local 443</option>
+            <option value="216.146.25.15:443">Test Server</option>
+          </select>
+          <div class="button-group">
+            <button type="button" id="play-btn" onclick="play(document.getElementById('nick').value); return false;" class="btn btn-play btn-primary btn-needs-server">Play</button>
+            <button id="spectate-btn" onclick="spectate(); return false;" class="btn btn-warning btn-spectate btn-needs-server">Spectate</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- The SUBDIALOG overlay that covers the main content, same location/size as #helloDialog -->
+      <div id="subDialog">
+        <!-- The actual "inner" box with new content. We will fill it below. -->
+        <div id="subInner">
+          <!-- Press outside to close; we also add a close button for convenience -->
+          <button class="subCloseBtn"><i class="fas fa-arrow-left"></i></button>
+
+          <!-- All the sub-content panels go here (we keep your existing #settings, #tab-edit, etc.) -->
+
+          <!-- SETTINGS content (moved inside subDialog). We keep original IDs, code is intact. -->
+          <div id="settings" class="sub-panel" style="display:none;">
+            <div class="form-group" id="mainform">
+              <button id="spectate-btn2" onclick="spectate(); return false;" style="width: 100%" class="btn btn-warning btn-spectate btn-needs-server">Spectate</button>
+              <br clear="both" />
             </div>
-        </div>
-    </div>
-    <div id="overlays">
-        <div id="helloDialog">
-            <form role="form">
-                <div class="form-group">
-                    <div id="skin_previews">
-                        <div id="active_skin" class="active"></div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <input id="nick" class="form-control save" data-box-id="0" placeholder="Nickname" maxlength="30" />
-                    <select id="gamemode" class="form-control" onchange="setServer($(this).val());" required>
-                        <option selected disabled>Servers:</option>
-                        <option value="127.0.0.1:443">Local 443</option>
-                        <option value="216.146.25.15:443">Test Server</option>
-                    </select>
-                    <br clear="both" />
-                </div>
-                <!-- Skin URL Input -->
-                <div class="form-group">
-                    <label for="skin_url">Enter Skin URL:</label>
-                    <input id="skin_url" class="form-control" placeholder="Paste an image URL" />
-                </div>
-                <div class="form-group">
-                    <div class="mb-10">
-                        <a data-toggle="modal" data-target="#inPageModal" onclick="openSkinsList();" class="btn-primary btn btn-info" role="button" style="width: 100%;">Skins Gallery</a>
-                    </div>
-                    <button type="button" id="play-btn" onclick="play(document.getElementById('nick').value); return false;" class="btn btn-play btn-primary btn-needs-server">Play</button>
-                    <button onclick="$('#settings, #instructions').toggle(); return false;" class="btn btn-info btn-settings" id="settings-btn"><i class="glyphicon glyphicon-cog"></i></button>
-                    <br clear="both" />
-                </div>
-                <div id="settings" class="checkbox" style="display:none;">
-                    <div class="form-group" id="mainform">
-                        <button id="spectate-btn" onclick="spectate(); return false;" style="width: 100%" class="btn btn-warning btn-spectate btn-needs-server">Spectate</button>
-                        <br clear="both" />
-                    </div>
-                    <div style="margin: 6px;">
-                        <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(!$(this).is(':checked'));">Hide Skins</label>
-                        <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(!$(this).is(':checked'));">Hide Names</label>
-                        <label><input type="checkbox" class="save" data-box-id="4" onchange="setColors($(this).is(':checked'));">Hide Colors</label>
-                        <label><input type="checkbox" class="save" data-box-id="7" onchange="setChatHide($(this).is(':checked'));">Hide Chat</label>
-                        <label><input type="checkbox" class="save" data-box-id="8" onchange="setMinimap($(this).is(':checked'));">Hide Minimap</label>
-                        <label><input type="checkbox" class="save" data-box-id="10" onchange="setGrid($(this).is(':checked'));">Hide Grid</label>
-                        <label><input type="checkbox" class="save" data-box-id="17" onchange="setFood($(this).is(':checked'));">Hide Food</label>
-                        <label><input type="checkbox" class="save" data-box-id="13" onchange="setStats($(this).is(':checked'));">Hide Stats</label>
-                        <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));">Show Mass</label>
-                        <label><input type="checkbox" class="save" data-box-id="3" onchange="setDarkTheme($(this).is(':checked'));">Dark Theme</label>
-                        <label><input type="checkbox" class="save" data-box-id="9" onchange="setCellBorder($(this).is(':checked'));" checked>Cell Borders</label>
-                        <label><input type="checkbox" class="save" data-box-id="18" onchange="setJelly($(this).is(':checked'));">Jelly Physics</label>
-                        <label><input type="checkbox" class="save" data-box-id="16" onchange="setTextOutline($(this).is(':checked'));" checked>Text Outline</label>
-                        <label><input type="checkbox" class="save" data-box-id="11" onchange="setZoom($(this).is(':checked'));">Infinite Zoom</label>
-                        <label><input type="checkbox" class="save" data-box-id="12" onchange="setTransparency($(this).is(':checked'));">Transparent</label>
-                        <label><input type="checkbox" class="save" data-box-id="14" onchange="setMapBorders($(this).is(':checked'));">Map Borders</label>
-                        <label><input type="checkbox" class="save" data-box-id="15" onchange="setSectors($(this).is(':checked'));">Map Sectors</label>
-                        <label><input type="checkbox" class="save" data-box-id="16" onchange="setCellPos($(this).is(':checked'));">Cell Position</label>
-                        <!--add hide stats option later-->
-                        <p> </p>
-                        <table>
-                            <tr>
-                                <td>
-                                    <label>LB Text Color (you)</label>
-                                    <input class="form-control" id="lbColor" placeholder="Default HEX = FAA" value="" style="width:180px;">
-                                </td>
-                                <td>
-                                    <label>Name Text Color</label>
-                                    <input class="form-control" id="nameColor" placeholder="Default HEX = FFF" value="" style="width:180px;">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label>Cell Border Color</label>
-                                    <input class="form-control" id="cellBorderColor" placeholder="Default HEX = 000" value="" style="width:180px;">
-                                </td>
-                                <td>
-                                    <label>Sound Volume</label>
-                                    <input class="form-control" id="soundsVolume" placeholder="Default = 0.5 | Max = 1" value="" step="0.1" type="number" min="0" max="1" style="width:180px;">
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </form>
-            <div id="instructions">
-                <hr/>
+            <div style="margin: 6px;">
+              <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(!$(this).is(':checked'));">Hide Skins</label>
+              <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(!$(this).is(':checked'));">Hide Names</label>
+              <label><input type="checkbox" class="save" data-box-id="4" onchange="setColors($(this).is(':checked'));">Hide Colors</label>
+              <label><input type="checkbox" class="save" data-box-id="7" onchange="setChatHide($(this).is(':checked'));">Hide Chat</label>
+              <label><input type="checkbox" class="save" data-box-id="8" onchange="setMinimap($(this).is(':checked'));">Hide Minimap</label>
+              <label><input type="checkbox" class="save" data-box-id="10" onchange="setGrid($(this).is(':checked'));">Hide Grid</label>
+              <label><input type="checkbox" class="save" data-box-id="17" onchange="setFood($(this).is(':checked'));">Hide Food</label>
+              <label><input type="checkbox" class="save" data-box-id="13" onchange="setStats($(this).is(':checked'));">Hide Stats</label>
+              <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));">Show Mass</label>
+              <label><input type="checkbox" class="save" data-box-id="3" onchange="setDarkTheme($(this).is(':checked'));">Dark Theme</label>
+              <label><input type="checkbox" class="save" data-box-id="9" onchange="setCellBorder($(this).is(':checked'));" checked>Cell Borders</label>
+              <label><input type="checkbox" class="save" data-box-id="18" onchange="setJelly($(this).is(':checked'));">Jelly Physics</label>
+              <label><input type="checkbox" class="save" data-box-id="16" onchange="setTextOutline($(this).is(':checked'));" checked>Text Outline</label>
+              <label><input type="checkbox" class="save" data-box-id="11" onchange="setZoom($(this).is(':checked'));">Infinite Zoom</label>
+              <label><input type="checkbox" class="save" data-box-id="12" onchange="setTransparency($(this).is(':checked'));">Transparent</label>
+              <label><input type="checkbox" class="save" data-box-id="14" onchange="setMapBorders($(this).is(':checked'));">Map Borders</label>
+              <label><input type="checkbox" class="save" data-box-id="15" onchange="setSectors($(this).is(':checked'));">Map Sectors</label>
+              <label><input type="checkbox" class="save" data-box-id="16" onchange="setCellPos($(this).is(':checked'));">Cell Position</label>
+              <p></p>
+              <table>
+                <tr>
+                  <td>
+                    <label>LB Text Color (you)</label>
+                    <input class="form-control" id="lbColor" placeholder="Default HEX = FAA" value="" style="width:180px;">
+                  </td>
+                  <td>
+                    <label>Name Text Color</label>
+                    <input class="form-control" id="nameColor" placeholder="Default HEX = FFF" value="" style="width:180px;">
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <label>Cell Border Color</label>
+                    <input class="form-control" id="cellBorderColor" placeholder="Default HEX = 000" value="" style="width:180px;">
+                  </td>
+                  <td>
+                    <label>Sound Volume</label>
+                    <input class="form-control" id="soundsVolume" placeholder="Default = 0.5 | Max = 1" value="" step="0.1" type="number" min="0" max="1" style="width:180px;">
+                  </td>
+                </tr>
+              </table>
             </div>
+          </div>
+
+          <!-- EDIT tab content -->
+          <div id="tab-edit" class="sub-panel" style="display:none;">
+            <p style="padding: 10px;">This is the Edit tab content.</p>
+          </div>
+
+          <!-- PALETTE tab content -->
+          <div id="tab-palette" class="sub-panel" style="display:none;">
+            <p style="padding: 10px;">This is the Palette tab content.</p>
+          </div>
+
+          <!-- CHAT tab content -->
+          <div id="tab-chat" class="sub-panel" style="display:none;">
+            <p style="padding: 10px;">This is the Chat tab content.</p>
+          </div>
+
+          <!-- NOTE tab content -->
+          <div id="tab-note" class="sub-panel" style="display:none;">
+            <p style="padding: 10px;">This is the Note tab content.</p>
+          </div>
         </div>
+      </div> <!-- /#subDialog -->
     </div>
-    <div id="connecting">
-        <div style="width: 350px; background-color: #FFFFFF; margin: 100px auto; border-radius: 15px; padding: 5px 15px 5px 15px;">
-            <h2>Connecting...</h2>
-            <p> If you cannot connect to the server, check if you have an antivirus or firewall blocking the connection.</p>
-        </div>
+  </div>
+
+  <!-- Connecting overlay (unchanged) -->
+  <div id="connecting">
+    <div style="width: 350px; background-color: #FFFFFF; margin: 100px auto; border-radius: 15px; padding: 5px 15px 5px 15px;">
+      <h2>Connecting...</h2>
+      <p>If you cannot connect to the server, check if you have an antivirus or firewall blocking the connection.</p>
     </div>
-    <canvas id="canvas" width="800" height="600"></canvas>
-    <input type="text" id="chat_textbox" placeholder="Press enter to chat" maxlength="200" />
-    <div style="font-family:'Ubuntu'">&nbsp;</div>
-    <script src="assets/js/bootstrap.min.js"></script>
+  </div>
+
+  <canvas id="canvas" width="800" height="600"></canvas>
+  <input type="text" id="chat_textbox" placeholder="Press enter to chat" maxlength="200" />
+  <div style="font-family:'Ubuntu'"> </div>
+
+  <!-- Bootstrap JS -->
+  <script src="assets/js/bootstrap.min.js"></script>
+
+  <!-- Script to handle subDialog toggling -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const subDialog = document.getElementById('subDialog');
+    const subInner = document.getElementById('subInner');
+    const closeBtn = document.querySelector('.subCloseBtn');
+    const panels = document.querySelectorAll('.sub-panel');
+
+    // For each icon button, show the corresponding sub-panel in #subDialog
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+
+        // Hide all sub-panels
+        panels.forEach(panel => panel.style.display = 'none');
+
+        // Figure out which ID to show
+        const target = btn.getAttribute('data-target');
+        const panelToShow = document.getElementById(target);
+
+        if (panelToShow) {
+          panelToShow.style.display = 'block';
+        }
+
+        // Show the overlay
+        subDialog.classList.add('active');
+      });
+    });
+
+    // Clicking the close arrow
+    closeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      subDialog.classList.remove('active');
+    });
+
+    // Clicking outside the subInner should also close the overlay
+    subDialog.addEventListener('click', function() {
+      subDialog.classList.remove('active');
+    });
+    // But if we click inside subInner, don't close
+    subInner.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+  });
+  </script>
 </body>
 </html>
