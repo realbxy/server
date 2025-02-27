@@ -115,18 +115,12 @@
             return this.view.getInt8(this._o++, this._e);
         }
         getUint16() {
-            if (this._o + 2 > this.view.byteLength) {
-                throw new RangeError("Offset is outside the bounds of the DataView");
-            }
             return this.view.getUint16((this._o += 2) - 2, this._e);
         }
         getInt16() {
             return this.view.getInt16((this._o += 2) - 2, this._e);
         }
         getUint32() {
-            if (this._o + 4 > this.view.byteLength) {
-                throw new RangeError("Offset is outside the bounds of the DataView");
-            }
             return this.view.getUint32((this._o += 4) - 4, this._e);
         }
         getInt32() {
@@ -142,12 +136,7 @@
             let s = "",
                 b;
             while ((b = this.view.getUint8(this._o++)) !== 0) s += String.fromCharCode(b);
-            try {
-                return decodeURIComponent(escape(s));
-            } catch (e) {
-                console.error("Error decoding URI component:", e);
-                return s;
-            }
+            return decodeURIComponent(escape(s));
         }
     }
     class Logger {
@@ -576,13 +565,10 @@
         writer._b.push(0, 0, 0, 0);
         wsSend(writer);
     }
-    function sendPlay(name, skinUrl) {
+    function sendPlay(name) {
         let writer = new Writer(1);
-        writer.setUint8(0x00); // Play command
-        writer.setStringUTF8(name); // Send player name
-        writer.setStringUTF8(skinUrl || ""); // Send skin URL, or empty string if none is provided
-
-        console.log(`Sending play command with name: ${name} and skin URL: ${skinUrl}`);
+        writer.setUint8(0x00);
+        writer.setStringUTF8(name);
         wsSend(writer);
     }
     function sendChat(text) {
@@ -730,43 +716,50 @@
             len = leaderboard.items.length;
         canvas.width = 250;
         canvas.height = leaderboard.type !== "pie" ? 60 + 24 * len : 240;
-        ctx.globalAlpha = .4;
+    
+        // Draw background with 40% opacity black and rounded corners
+        ctx.globalAlpha = 0.4;
         ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, 250, canvas.height);
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 250, canvas.height, 15); // Rounded rectangle with 15px radius
+        ctx.fill();
         ctx.globalAlpha = 1;
+    
+        // Draw the leaderboard title in non-bold, uniform text styling
         ctx.fillStyle = "#FFF";
-        ctx.font = "30px Ubuntu";
-        ctx.fillText("Leaderboard", 125 - ctx.measureText("Leaderboard").width / 2, 40);
+        ctx.font = "28px Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Leaderboard", 125, 40);
+    
         if (leaderboard.type === "pie") {
             let last = 0;
             for (let i = 0; i < len; i++) {
                 ctx.fillStyle = leaderboard.teams[i];
                 ctx.beginPath();
                 ctx.moveTo(125, 140);
-                ctx.arc(125, 140, 80, last, (last += leaderboard.items[i] * PI_2), 0);
+                ctx.arc(125, 140, 80, last, (last += leaderboard.items[i] * Math.PI * 2), 0);
                 ctx.closePath();
                 ctx.fill();
             }
         } else {
-            let text,
-                isMe = 0;
-            ctx.font = "20px Ubuntu";
+            // Uniform styling for all leaderboard entries
+            ctx.font = "20px Arial, sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#FFF";
+    
             for (let i = 0; i < len; i++) {
-                if (leaderboard.type === "text") text = leaderboard.items[i];
-                else {
-                    text = leaderboard.items[i].name;
-                    isMe = leaderboard.items[i].me;
+                let text;
+                if (leaderboard.type === "text") {
+                    text = leaderboard.items[i];
+                } else {
+                    text = leaderboard.items[i].name || "An unnamed cell";
+                    text = (i + 1) + ". " + text;
                 }
-                let reg = /\{([\w]+)\}/.exec(text);
-                if (reg) text = text.replace(reg[0], "").trim();
-                let string = String($("#lbColor").val());
-                ctx.fillStyle = isMe ? "#" + (!string ? "FAA" : string) : "#FFF";
-                if (leaderboard.type === "ffa") text = (i + 1) + ". " + (text || "An unnamed cell");
-                ctx.textAlign = "left";
+    
                 ctx.fillText(text, 15, 70 + 24 * i);
             }
         }
-    }
+    }        
     function drawGrid() {
         mainCtx.save();
         mainCtx.lineWidth = 1;
@@ -795,10 +788,10 @@
     function drawBorders() { // Rendered unusable when a server has coordinate scrambling enabled
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.mapBorders) return;
         mainCtx.save();
-        mainCtx.strokeStyle = '#F00';
-        mainCtx.lineWidth = 20;
-        mainCtx.lineCap = "round";
-        mainCtx.lineJoin = "round";
+        mainCtx.strokeStyle = '#ffffff';
+        mainCtx.lineWidth = 50;
+        mainCtx.lineCap = "square";
+        mainCtx.lineJoin = "square";
         mainCtx.beginPath();
         mainCtx.moveTo(border.left, border.top);
         mainCtx.lineTo(border.right, border.top);
@@ -817,39 +810,70 @@
             h = (border.top + 65 - y) / 5;
         mainCtx.save();
         mainCtx.beginPath();
-        mainCtx.lineWidth = .05;
+        mainCtx.lineWidth = 0.05;
         mainCtx.textAlign = "center";
         mainCtx.textBaseline = "middle";
-        mainCtx.font = w * .6 + "px Russo One";
-        mainCtx.fillStyle = "#1A1A1A";
-        for (let j = 0; 5 > j; j++)
-            for (let i = 0; 5 > i; i++) mainCtx.fillText(letter[j] + (i + 1), x + w * j + w / 2, (-y - h) + h * -i + h / 2);
+        // Use a slightly smaller font size (50% of cell width) and Arial font.
+        mainCtx.font = (w * 0.4) + "px Arial";
+        // Set the text color to white with 70% opacity
+        mainCtx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        for (let j = 0; j < 5; j++) {
+            for (let i = 0; i < 5; i++) {
+                mainCtx.fillText(letter[j] + (i + 1), x + w * j + w / 2, (-y - h) + h * -i + h / 2);
+            }
+        }
         mainCtx.lineWidth = 100;
         mainCtx.strokeStyle = "#1A1A1A";
-        for (let j = 0; 5 > j; j++)
-            for (let i = 0; 5 > i; i++) mainCtx.strokeRect(x + w * i, y + h * j, w, h);
+        for (let j = 0; j < 5; j++) {
+            for (let i = 0; i < 5; i++) {
+                mainCtx.strokeRect(x + w * i, y + h * j, w, h);
+            }
+        }
         mainCtx.restore();
         mainCtx.stroke();
-    }
+    }        
     function drawMinimap() { // Rendered unusable when a server has coordinate scrambling enabled
         if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.showMinimap) return;
         mainCtx.save();
+    
+        // Calculate minimap dimensions and placement (with a slight offset from the edge)
         let width = 200 * (border.width / border.height),
             height = 200 * (border.height / border.width),
-            beginX = mainCanvas.width / camera.viewMult - width,
-            beginY = mainCanvas.height / camera.viewMult - height;
+            beginX = mainCanvas.width / camera.viewMult - width - 20,
+            beginY = mainCanvas.height / camera.viewMult - height - 20;
+    
+        // Draw modern minimap background as a rounded rectangle with a pure black fill
+        let cornerRadius = 10;
+        mainCtx.beginPath();
+        mainCtx.moveTo(beginX + cornerRadius, beginY);
+        mainCtx.lineTo(beginX + width - cornerRadius, beginY);
+        mainCtx.quadraticCurveTo(beginX + width, beginY, beginX + width, beginY + cornerRadius);
+        mainCtx.lineTo(beginX + width, beginY + height - cornerRadius);
+        mainCtx.quadraticCurveTo(beginX + width, beginY + height, beginX + width - cornerRadius, beginY + height);
+        mainCtx.lineTo(beginX + cornerRadius, beginY + height);
+        mainCtx.quadraticCurveTo(beginX, beginY + height, beginX, beginY + height - cornerRadius);
+        mainCtx.lineTo(beginX, beginY + cornerRadius);
+        mainCtx.quadraticCurveTo(beginX, beginY, beginX + cornerRadius, beginY);
+        mainCtx.closePath();
+    
+        // Use a pure black background fill
         mainCtx.fillStyle = "#000";
-        mainCtx.globalAlpha = .4;
-        mainCtx.fillRect(beginX, beginY, width, height);
-        mainCtx.globalAlpha = 1;
+        mainCtx.fill();
+    
+        // Add a subtle dark border to the minimap
+        mainCtx.strokeStyle = "#444";
+        mainCtx.lineWidth = 2;
+        mainCtx.stroke();
+    
+        // Draw grid sectors with modern styled labels
         let sectorNames = ["ABCDE", "12345"],
             sectorWidth = width / 5,
             sectorHeight = height / 5,
             sectorNameSize = Math.min(sectorWidth, sectorHeight) / 3;
-        mainCtx.fillStyle = settings.darkTheme ? "#666" : "#DDD";
+        mainCtx.fillStyle = settings.darkTheme ? "#aaa" : "#ccc";
         mainCtx.textBaseline = "middle";
         mainCtx.textAlign = "center";
-        mainCtx.font = `${sectorNameSize}px Russo One`;
+        mainCtx.font = `${sectorNameSize}px 'Roboto', sans-serif`;
         for (let i = 0; i < 5; i++) {
             let x = sectorWidth / 2 + i * sectorWidth;
             for (let j = 0; j < 5; j++) {
@@ -857,37 +881,47 @@
                 mainCtx.fillText(`${sectorNames[0][i]}${sectorNames[1][j]}`, beginX + x, beginY + y);
             }
         }
+    
+        // Calculate scaling factors to convert world coordinates to minimap coordinates
         let scaleX = width / border.width,
             scaleY = height / border.height,
             halfWidth = border.width / 2,
-            halfHeight = border.height / 2,
-            posX = beginX + (camera.x + halfWidth) * scaleX,
-            posY = beginY + (camera.y + halfHeight) * scaleY;
-        mainCtx.beginPath();
-        if (cells.mine.length) {
-            for (let i = 0; i < cells.mine.length; i++) {
-                let cell = cells.byId.get(cells.mine[i]);
-                if (cell) {
-                    mainCtx.fillStyle = settings.showColor ? cell.color : "#FFF";
-                    let x = beginX + (cell.x + halfWidth) * scaleX,
-                        y = beginY + (cell.y + halfHeight) * scaleY;
-                    mainCtx.moveTo(x + cell.s * scaleX, y);
-                    mainCtx.arc(x, y, cell.s * scaleX, 0, PI_2);
-                }
-            }
-        } else {
-            mainCtx.fillStyle = "#FFF";
-            mainCtx.arc(posX, posY, 5, 0, PI_2);
-        }
-        mainCtx.fill();
-        let cell = cells.byId.get(cells.mine.find(id => cells.byId.has(id)));
-        if (cell) {
+            halfHeight = border.height / 2;
+    
+        // Draw a single static indicator for the player using the first cell (if available)
+        let playerCell = cells.mine.length ? cells.byId.get(cells.mine[0]) : null;
+        if (playerCell) {
+            // Use the player's cell coordinates to place the static indicator
+            let posX = beginX + (playerCell.x + halfWidth) * scaleX;
+            let posY = beginY + (playerCell.y + halfHeight) * scaleY;
+            let cellRadius = 5;  // even smaller indicator
+            mainCtx.beginPath();
+            mainCtx.fillStyle = settings.showColor ? playerCell.color : "#FFF";
+            mainCtx.arc(posX, posY, cellRadius, 0, Math.PI * 2);
+            mainCtx.fill();
+    
+            // Optional outline for a crisp look
+            mainCtx.strokeStyle = "#000";
+            mainCtx.lineWidth = 1;
+            mainCtx.stroke();
+    
+            // Draw the player's cell name slightly lower (closer to the cell) using "Hind Madurai" font
             mainCtx.fillStyle = settings.darkTheme ? "#DDD" : "#222";
-            mainCtx.font = `${sectorNameSize}px Ubuntu`;
-            mainCtx.fillText(cell.name, posX, posY - 7 - sectorNameSize / 2);
+            mainCtx.font = `${sectorNameSize}px 'Hind Madurai', sans-serif`;
+            mainCtx.textBaseline = "bottom";
+            mainCtx.fillText(playerCell.name, posX, posY - cellRadius - 3);
+        } else {
+            // Fallback: if no player cell exists, display a default indicator at the minimap center.
+            let posX = beginX + width / 2,
+                posY = beginY + height / 2;
+            mainCtx.beginPath();
+            mainCtx.fillStyle = "#FFF";
+            mainCtx.arc(posX, posY, 5, 0, Math.PI * 2);
+            mainCtx.fill();
         }
+    
         mainCtx.restore();
-    }
+    }          
     function drawGame() {
         stats.framesPerSecond += (1000 / Math.max(Date.now() - syncAppStamp, 1) - stats.framesPerSecond) / 10;
         syncAppStamp = Date.now();
@@ -1099,28 +1133,10 @@
             } else this.name = value;
         }
         setSkin(value) {
-            if (!value) return;
-
-            // Determine if value is a valid URL
-            let isUrl = value.startsWith("http://") || value.startsWith("https://");
-
-            if (isUrl) {
-                this.skin = value; // Direct URL skin
-            } else {
-                this.skin = `${SKIN_URL}${value}.png`; // Local skin
-            }
-
-            console.log(`Setting skin to: ${this.skin}`);
-
-            // Ensure the skin is loaded properly
-            if (!loadedSkins[this.skin]) {
-                let img = new Image();
-                img.crossOrigin = "anonymous"; // Allow cross-origin image loading
-                img.src = this.skin;
-                img.onload = () => console.log(`Skin loaded: ${this.skin}`);
-                img.onerror = () => console.warn(`Failed to load skin: ${this.skin}`);
-                loadedSkins[this.skin] = img;
-            }
+            this.skin = (value && value[0] === "%" ? value.slice(1) : value) || this.skin;
+            if (this.skin == null || loadedSkins[this.skin]) return;
+            loadedSkins[this.skin] = new Image();
+            loadedSkins[this.skin].src = `${SKIN_URL}${this.skin}.png`;
         }
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
@@ -1135,18 +1151,12 @@
         }
         drawShape(ctx) {
             if (settings.hideFood && this.food) return;
-        
-            // Set cell color
             ctx.fillStyle = settings.showColor ? this.color : Cell.prototype.color;
-            
             let color = String($("#cellBorderColor").val());
             ctx.strokeStyle = color.length === 3 || color.length === 6 ? "#" + color : settings.showColor ? this.sColor : Cell.prototype.sColor;
             ctx.lineWidth = this.jagged ? 12 : Math.max(~~(this.s / 50), 10);
-        
-            let showCellBorder = settings.cellBorders && !this.food && !this.ejected && this.s > 20;
+            let showCellBorder = settings.cellBorders && !this.food && !this.ejected && 20 < this.s;
             if (showCellBorder) this.s -= ctx.lineWidth / 2 - 2;
-        
-            // Draw shape
             ctx.beginPath();
             if (this.jagged) ctx.lineJoin = "miter";
             if (settings.jellyPhysics && this.points.length) {
@@ -1163,39 +1173,26 @@
                     ctx.lineTo(this.x + dist * Math.sin(angle), this.y + dist * Math.cos(angle));
                 }
                 ctx.lineTo(this.x, this.y + this.s + 3);
-            } else {
-                ctx.arc(this.x, this.y, this.s, 0, PI_2, false);
-            }
+            } else ctx.arc(this.x, this.y, this.s, 0, PI_2, false);
             ctx.closePath();
-            
-            // Transparency handling
-            if (settings.transparency) ctx.globalAlpha = 0.75;
+            if (settings.transparency) ctx.globalAlpha = .75;
             else if (this.destroyed) ctx.globalAlpha = Math.max(200 - Date.now() + this.dead, 0) / 100;
             else ctx.globalAlpha = Math.min(Date.now() - this.born, 200) / 100;
-        
             if (showCellBorder) ctx.stroke();
             ctx.fill();
-        
-            // Draw skin if available
             if (settings.showSkins && this.skin) {
                 let skin = loadedSkins[this.skin];
                 if (skin && skin.complete && skin.width && skin.height) {
                     ctx.save();
                     ctx.clip();
                     scaleBack(ctx);
-        
                     let sScaled = this.s * camera.z;
                     if (settings.jellyPhysics) sScaled += 3;
-        
-                    console.log(`Drawing skin: ${this.skin} at position (${this.x}, ${this.y}) with size ${sScaled}`);
-                    ctx.drawImage(skin, this.x * camera.z - sScaled, this.y * camera.z - sScaled, sScaled * 2, sScaled * 2);
+                    ctx.drawImage(skin, this.x * camera.z - sScaled, this.y * camera.z - sScaled, sScaled *= 2, sScaled);
                     scaleForth(ctx);
                     ctx.restore();
-                } else {
-                    console.warn(`Skin not loaded or invalid: ${this.skin}`);
                 }
             }
-        
             if (showCellBorder) this.s += ctx.lineWidth / 2 - 2;
         }
         drawText(ctx) {
@@ -1215,21 +1212,19 @@
         cachedMass  = {};
     function cacheCleanup() {
         for (let i in cachedNames) {
-            for (let j in cachedNames[i]) {
+            for (let j in cachedNames[i])
                 if (syncAppStamp - cachedNames[i][j].accessTime >= 5000) delete cachedNames[i][j];
-            }
             if (Object.keys(cachedNames[i]).length === 0) delete cachedNames[i];
         }
-        for (let i in cachedMass) {
+        for (let i in cachedMass)
             if (syncAppStamp - cachedMass[i].accessTime >= 5000) delete cachedMass[i];
-        }
     }
     function drawTextOnto(canvas, ctx, text, size) {
-        ctx.font = `${size}px 'Hind Madurai', sans-serif`;
+        ctx.font = `${size}px Hind Madurai`;
         ctx.lineWidth = settings.showTextOutline ? Math.max(~~(size / 10), 2) : 2;
         canvas.width = ctx.measureText(text).width + 2 * ctx.lineWidth;
         canvas.height = 4 * size;
-        ctx.font = `${size}px 'Hind Madurai', sans-serif`;
+        ctx.font = `${size}px Hind Madurai`;
         ctx.lineWidth = settings.showTextOutline ? Math.max(~~(size / 10), 2) : 2;
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
@@ -1237,7 +1232,7 @@
         ctx.fillStyle = "#" + (!string ? "FFF" : string);
         ctx.strokeStyle = "#000";
         ctx.translate(canvas.width / 2, 2 * size);
-        if (ctx.lineWidth !== 1) ctx.strokeText(text, 0, 0);
+        (ctx.lineWidth !== 1) && ctx.strokeText(text, 0, 0);
         ctx.fillText(text, 0, 0);
     }
     function drawRaw(ctx, x, y, text, size) {
@@ -1268,7 +1263,8 @@
     }
     function newMassCache(size) {
         let canvases = {
-            "0": {}, "1": {}, "2": {}, "3": {}, "4": {}, "5": {}, "6": {}, "7": {}, "8": {}, "9": {}
+            "0": {}, "1": {}, "2": {}, "3": {}, "4": {},
+            "5": {}, "6": {}, "7": {}, "8": {}, "9": {}
         };
         for (let value in canvases) {
             let canvas = canvases[value].canvas = document.createElement("canvas"),
@@ -1292,16 +1288,14 @@
     function getNameCache(value, size) {
         if (!cachedNames[value]) return newNameCache(value, size);
         let sizes = Object.keys(cachedNames[value]);
-        for (let i = 0, l = sizes.length; i < l; i++) {
+        for (let i = 0, l = sizes.length; i < l; i++)
             if (toleranceTest(size, sizes[i], size / 4)) return cachedNames[value][sizes[i]];
-        }
         return newNameCache(value, size);
     }
     function getMassCache(size) {
         let sizes = Object.keys(cachedMass);
-        for (let i = 0, l = sizes.length; i < l; i++) {
+        for (let i = 0, l = sizes.length; i < l; i++)
             if (toleranceTest(size, sizes[i], size / 4)) return cachedMass[sizes[i]];
-        }
         return newMassCache(size);
     }
     function drawText(ctx, isMass, x, y, size, drawSize, value) {
@@ -1313,7 +1307,7 @@
             cache.accessTime = syncAppStamp;
             let canvases = cache.canvases,
                 correctionScale = drawSize / cache.size,
-                width = 0;
+                width = 0; // Calculate width
             for (let i = 0; i < value.length; i++) width += canvases[value[i]].width - 2 * cache.lineWidth;
             ctx.scale(correctionScale, correctionScale);
             x /= correctionScale;
@@ -1670,10 +1664,7 @@
         });
     };
     wHandle.play = function(arg) {
-        let skinUrl = document.getElementById('skin_url').value.trim(); // Get skin URL
-        if (!skinUrl.startsWith("http")) skinUrl = ""; // Ensure it's a valid URL
-        console.log(`Playing with skin URL: ${skinUrl}`);
-        sendPlay(arg, skinUrl); // Pass the skin URL to the sendPlay function
+        sendPlay(arg);
         hideOverlay();
     };
     wHandle.onload = init;
