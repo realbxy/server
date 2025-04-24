@@ -370,6 +370,8 @@
         // Get the skin URL from the input field
         const skinInput = document.getElementById("skin-url");
         customSkinUrl = skinInput && skinInput.value ? skinInput.value.trim() : null;
+        console.log(`Custom skin URL set to: ${customSkinUrl}`);
+        
         // Save to localStorage for persistence
         if (window.localStorage && skinInput) {
             window.localStorage.setItem("skin-url", customSkinUrl || "");
@@ -495,28 +497,21 @@
             } else this.name = value;
         }
         setSkin(value) {
-            console.log(`setSkin called for cell ID: ${this.id}`);
-            console.log(`Custom skin URL: ${customSkinUrl}`);
-
-            // Only apply customSkinUrl to your own cells
+            // Only apply customSkinUrl to your own cells (force type match)
             if (customSkinUrl && cells.mine && cells.mine.map(Number).includes(Number(this.id))) {
                 this.skin = customSkinUrl;
-                console.log(`Applying custom skin URL: ${this.skin}`);
                 if (!loadedSkins[this.skin]) {
                     loadedSkins[this.skin] = new Image();
                     loadedSkins[this.skin].crossOrigin = "anonymous"; // Allow CORS images
-                    loadedSkins[this.skin].src = this.skin; // Use the custom URL as-is
-                    console.log(`Loaded custom skin from: ${loadedSkins[this.skin].src}`);
+                    loadedSkins[this.skin].src = this.skin; // Use the custom URL as-is!
                 }
                 return;
             }
-
             // Original logic for named skins
             this.skin = (value && value[0] === "%" ? value.slice(1) : value) || this.skin;
             if (this.skin == null || loadedSkins[this.skin]) return;
             loadedSkins[this.skin] = new Image();
             loadedSkins[this.skin].src = `${SKIN_URL}${this.skin}.png`;
-            console.log(`Loaded named skin from: ${loadedSkins[this.skin].src}`);
         }
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
@@ -1050,6 +1045,8 @@
         // Get the skin URL from the input field
         const skinInput = document.getElementById("skin-url");
         customSkinUrl = skinInput && skinInput.value ? skinInput.value.trim() : null;
+        console.log(`Custom skin URL set to: ${customSkinUrl}`);
+        
         // Save to localStorage for persistence
         if (window.localStorage && skinInput) {
             window.localStorage.setItem("skin-url", customSkinUrl || "");
