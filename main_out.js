@@ -1,4 +1,3 @@
-
 (function(wHandle, wjQuery) {
     "use strict";
     if (!Date.now) Date.now = function() {
@@ -496,8 +495,8 @@
             } else this.name = value;
         }
         setSkin(value) {
-            // Only apply customSkinUrl to your own cells
-            if (customSkinUrl && cells.mine && cells.mine.includes(this.id)) {
+            // Only apply customSkinUrl to your own cells (force type match)
+            if (customSkinUrl && cells.mine && cells.mine.map(Number).includes(Number(this.id))) {
                 this.skin = customSkinUrl;
                 if (!loadedSkins[this.skin]) {
                     loadedSkins[this.skin] = new Image();
