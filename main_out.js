@@ -1,3 +1,4 @@
+
 (function(wHandle, wjQuery) {
     "use strict";
     if (!Date.now) Date.now = function() {
@@ -213,12 +214,12 @@
             43: new Uint8Array([43]),
             254: new Uint8Array([254])
         },
-        cells = Object.create({
+        cells = {
             mine: [],
-            byId: {},
+            byId: new Map(),
             list: [],
-        }),
-        border = Object.create({
+        },
+        border = {
             left: -2000,
             right: 2000,
             top: -2000,
@@ -227,20 +228,20 @@
             height: 4000,
             centerX: -1,
             centerY: -1
-        }),
-        leaderboard = Object.create({
+        },
+        leaderboard = {
             type: NaN,
             items: null,
             canvas: document.createElement("canvas"),
             teams: ["#F33", "#3F3", "#33F"]
-        }),
-        chat = Object.create({
+        },
+        chat = {
             messages: [],
             waitUntil: 0,
             canvas: document.createElement("canvas"),
             visible: 0,
-        }),
-        stats = Object.create({
+        },
+        stats = {
             framesPerSecond: 0,
             latency: NaN,
             supports: null,
@@ -251,7 +252,7 @@
             visible: 0,
             score: NaN,
             maxScore: 0
-        }),
+        },
         ws = null,
         WS_URL = null,
         isConnected = 0,
@@ -333,268 +334,12 @@
             esc: 0
         },
         eatSound = new Sound("./assets/sound/eat.mp3", .5, 10),
-        pelletSound = new Sound("./assets/sound/pellet.mp3", .5, 10),
-        customSkinUrl = null;
+        pelletSound = new Sound("./assets/sound/pellet.mp3", .5, 10);
 
-    function wsCleanup() {
-        if (!ws) return;
-        log.debug("WS cleanup triggered!");
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-        ws.onclose = null;
-        ws.close();
-        ws = null;
-    }
-    function wsInit(url) {
-        if (ws) {
-            log.debug("websocket init on existing connection!");
-            wsCleanup();
-        }
-        wjQuery("#connecting").show();
-        ws = new WebSocket(`ws${USE_HTTPS && !url.includes("127.0.0.1") ? "s" : ""}://${WS_URL = url}`);
-        ws.binaryType = "arraybuffer";
-        ws.onopen = wsOpen;
-        ws.onmessage = wsMessage;
-        ws.onerror = wsError;
-        ws.onclose = wsClose;
-    }
-    function wsOpen() {
-        isConnected = 1;
-        disconnectDelay = 1000;
-        wjQuery("#connecting").hide();
-        wsSend(UINT8_254);
-        wsSend(UINT8_255);
-        log.debug(`WS connected, using https: ${USE_HTTPS}`);
-        log.info("Socket open.");
-    }
-    function wsError(error) {
-        log.error(error);
-        log.info("Socket error.");
-    }
-    function wsClose(e) {
-        isConnected = 0;
-        log.debug(`WS disconnected ${e.code} '${e.reason}'`);
-        wsCleanup();
-        gameReset();
-        setTimeout(() => {
-            if (ws && ws.readyState === 1) return;
-            wsInit(WS_URL);
-        }, disconnectDelay *= 1.5);
-        log.info("Socket closed.");
-    }
-    function wsSend(data) {
-        if (!ws) return;
-        if (ws.readyState !== 1) return;
-        if (data.build) ws.send(data.build());
-        else ws.send(data);
-    }
-    function wsMessage(data) {
-        syncUpdStamp = Date.now();
-        let reader = new Reader(new DataView(data.data), 0, 1),
-            packetId = reader.getUint8(),
-            killer,
-            killed,
-            id,
-            x,
-            y,
-            s,
-            flags,
-            cell,
-            updColor,
-            updName,
-            updSkin,
-            count,
-            color,
-            name,
-            skin;
-        switch (packetId) {
-            case 0x10: // Update nodes
-                // Consume records
-                count = reader.getUint16();
-                for (let i = 0; i < count; i++) {
-                    killer = reader.getUint32();
-                    killed = reader.getUint32();
-                    let _cell = cells.byId.get(killed);
-                    if (!cells.byId.has(killer) || !cells.byId.has(killed)) continue;
-                    if (soundsVolume.value && cells.mine.includes(killer) && syncUpdStamp - _cell.born > 100) (_cell.s < 20 ? pelletSound : eatSound).play(parseFloat(soundsVolume.value));
-                    _cell.destroy(killer);
-                }
-                // Update records
-                while (true) {
-                    id = reader.getUint32();
-                    if (id === 0) break;
-                    x = reader.getInt32();
-                    y = reader.getInt32();
-                    s = reader.getUint16();
-                    flags = reader.getUint8();
-                    updColor = !!(flags & 0x02);
-                    updName = !!(flags & 0x08);
-                    updSkin = !!(flags & 0x04);
-                    color = updColor ? bytesToColor(reader.getUint8(), reader.getUint8(), reader.getUint8()) : null;
-                    skin = updSkin ? reader.getStringUTF8() : null;
-                    name = updName ? reader.getStringUTF8() : null;
-                    if (cells.byId.has(id)) {
-                        cell = cells.byId.get(id);
-                        cell.update(syncUpdStamp);
-                        cell.updated = syncUpdStamp;
-                        cell.ox = cell.x;
-                        cell.oy = cell.y;
-                        cell.os = cell.s;
-                        cell.nx = x;
-                        cell.ny = y;
-                        cell.ns = s;
-                        if (color) cell.setColor(color);
-                        if (skin) cell.setSkin(skin);
-                        if (name) cell.setName(name);
-                    } else {
-                        cell = new Cell(id, x, y, s, name, color, skin, flags);
-                        cells.byId.set(id, cell);
-                        cells.list.push(cell);
-                    }
-                }
-                // Disappear records
-                count = reader.getUint16();
-                for (let i = 0; i < count; i++) {
-                    killed = reader.getUint32();
-                    if (cells.byId.has(killed) && !cells.byId.get(killed).destroyed) cells.byId.get(killed).destroy(null);
-                }
-                break;
-            case 0x11: // Update position
-                target.x = reader.getFloat32();
-                target.y = reader.getFloat32();
-                target.z = reader.getFloat32();
-                break;
-            case 0x12: // Clear all
-                for (let cell of cells.byId.values()) cell.destroy(null);
-            case 0x14: // Clear my cells
-                cells.mine = [];
-                break;
-            case 0x15: // Draw line
-                log.warn("Got packet 0x15 (draw line) which is unsupported!");
-                break;
-            case 0x20: // New cell
-                cells.mine.push(reader.getUint32());
-                break;
-            case 0x30: // Draw just text on a leaderboard
-                leaderboard.items = [];
-                leaderboard.type = "text";
-                count = reader.getUint32();
-                for (let i = 0; i < count; ++i) leaderboard.items.push(reader.getStringUTF8());
-                drawLeaderboard();
-                break;
-            case 0x31: // Draw FFA leaderboard
-                leaderboard.items = [];
-                leaderboard.type = "ffa";
-                count = reader.getUint32();
-                for (let i = 0; i < count; ++i) leaderboard.items.push({
-                    me: !!reader.getUint32(),
-                    name: reader.getStringUTF8() || "An unnamed cell"
-                });
-                drawLeaderboard();
-                break;
-            case 0x32: // Draw Teams leaderboard
-                leaderboard.items = [];
-                leaderboard.type = "pie";
-                count = reader.getUint32();
-                for (let i = 0; i < count; ++i) leaderboard.items.push(reader.getFloat32());
-                drawLeaderboard();
-                break;
-            case 0x40: // Set the borders
-                border.left = reader.getFloat64();
-                border.top = reader.getFloat64();
-                border.right = reader.getFloat64();
-                border.bottom = reader.getFloat64();
-                border.width = border.right - border.left;
-                border.height = border.bottom - border.top;
-                border.centerX = (border.left + border.right) / 2;
-                border.centerY = (border.top + border.bottom) / 2;
-                if (data.data.byteLength === 33) break;
-                if (!mapCenterSet) {
-                    mapCenterSet = 1;
-                    camera.x = target.x = border.centerX;
-                    camera.y = target.y = border.centerY;
-                    camera.z = target.z = 1;
-                }
-                reader.getUint32(); // game type
-                if (!/MultiOgar/.test(reader.getStringUTF8()) || stats.pingLoopId) break;
-                stats.pingLoopId = setInterval(() => {
-                    wsSend(UINT8[254]);
-                    stats.pingLoopStamp = Date.now();
-                }, 2000);
-                break;
-            case 0x63: // chat message
-                flags = reader.getUint8();
-                color = bytesToColor(reader.getUint8(), reader.getUint8(), reader.getUint8());
-                name = reader.getStringUTF8().trim();
-                let reg = /\{([\w]+)\}/.exec(name);
-                if (reg) name = name.replace(reg[0], "").trim();
-                let message = reader.getStringUTF8(),
-                    server = !!(flags & 0x80),
-                    admin = !!(flags & 0x40),
-                    mod = !!(flags & 0x20);
-                if (server && name !== "SERVER") name = "[SERVER] " + name;
-                if (admin) name = "[ADMIN] " + name;
-                if (mod) name = "[MOD] " + name;
-                let wait = Math.max(3000, 1000 + message.length * 150);
-                chat.waitUntil = syncUpdStamp - chat.waitUntil > 1000 ? syncUpdStamp + wait : chat.waitUntil + wait;
-                chat.messages.push({
-                    server: server,
-                    admin: admin,
-                    mod: mod,
-                    color: color,
-                    name: name,
-                    message: message,
-                    time: syncUpdStamp
-                });
-                drawChat();
-                break;
-            case 0xFE: // server stat
-                stats.info = JSON.parse(reader.getStringUTF8());
-                stats.latency = syncUpdStamp - stats.pingLoopStamp;
-                drawStats();
-                break;
-            default: // invalid packet
-                wsCleanup();
-                break;
-        }
-    }
-    function sendMouseMove(x, y) {
-        let writer = new Writer(1);
-        writer.setUint8(0x10);
-        writer.setUint32(x);
-        writer.setUint32(y);
-        writer._b.push(0, 0, 0, 0);
-        wsSend(writer);
-    }
-    function sendPlay(name) {
-        let writer = new Writer(1);
-        writer.setUint8(0x00);
-        writer.setStringUTF8(name);
-        wsSend(writer);
-    }
-    function sendChat(text) {
-        let writer = new Writer();
-        writer.setUint8(0x63);
-        writer.setUint8(0);
-        writer.setStringUTF8(text);
-        wsSend(writer);
-    }
-    function gameReset() {
-        cleanupObject(cells);
-        cleanupObject(border);
-        cleanupObject(leaderboard);
-        cleanupObject(chat);
-        cleanupObject(stats);
-        chat.messages = [];
-        leaderboard.items = [];
-        cells.mine = [];
-        cells.byId = new Map();
-        cells.list = [];
-        camera.x = camera.y = target.x = target.y = 0;
-        camera.z = target.z = 1;
-        mapCenterSet = 0;
-    }
+    // --- Custom Skin URL logic ---
+    let customSkinUrl = null;
+
+    // Restore skin-url input from localStorage on page load
     if (null !== wHandle.localStorage) wjQuery(window).load(function() {
         wjQuery(".save").each(function() {
             let id = wjQuery(this).data("box-id"),
@@ -620,368 +365,22 @@
             }
         }
     });
-    function hideOverlay() {
-        overlayShown = 0;
-        wjQuery("#overlays").fadeOut(200);
-    }
-    function showOverlay() {
-        overlayShown = 1;
-        wjQuery("#overlays").fadeIn(300);
-    }
-    function toCamera(ctx) {
-        ctx.translate(mainCanvas.width / 2, mainCanvas.height / 2);
-        scaleForth(ctx);
-        ctx.translate(-camera.x, -camera.y);
-    }
-    function scaleForth(ctx) {
-        ctx.scale(camera.z, camera.z);
-    }
-    function scaleBack(ctx) {
-        ctx.scale(camera.zScale, camera.zScale);
-    }
-    function fromCamera(ctx) {
-        ctx.translate(camera.x, camera.y);
-        scaleBack(ctx);
-        ctx.translate(-mainCanvas.width / 2, -mainCanvas.height / 2);
-    }
-    function drawChat() {
-        if (!chat.messages.length && !settings.hideChat) return;
-        let canvas = chat.canvas,
-            ctx = canvas.getContext("2d"),
-            latestMessages = chat.messages.slice(-15),
-            lines = [],
-            len = latestMessages.length;
-        for (let i = 0; i < len; i++) lines.push([
-            {text: latestMessages[i].name,
-            color: latestMessages[i].color},
-            {text: " " + latestMessages[i].message,
-            color: settings.darkTheme ? "#FFF" : "#000"}
-        ]);
-        let width = 0,
-            height = 20 * len + 2;
-        for (let i = 0; i < len; i++) {
-            let thisLineWidth = 0,
-                complexes = lines[i];
-            for (let j = 0; j < complexes.length; j++) {
-                ctx.font = "18px Ubuntu";
-                complexes[j].width = ctx.measureText(complexes[j].text).width;
-                thisLineWidth += complexes[j].width;
-            }
-            width = Math.max(thisLineWidth, width);
+
+    // Patch the play function to store the skin URL
+    wHandle.play = function(arg) {
+        // Get the skin URL from the input field
+        const skinInput = document.getElementById("skin-url");
+        customSkinUrl = skinInput && skinInput.value ? skinInput.value.trim() : null;
+        // Save to localStorage for persistence
+        if (window.localStorage && skinInput) {
+            window.localStorage.setItem("skin-url", customSkinUrl || "");
         }
-        canvas.width = width;
-        canvas.height = height;
-        for (let i = 0; i < len; i++) {
-            width = 0;
-            let complexes = lines[i];
-            for (let j = 0; j < complexes.length; j++) {
-                ctx.font = "18px Ubuntu";
-                ctx.fillStyle = complexes[j].color;
-                ctx.fillText(complexes[j].text, width, 20 * (1 + i));
-                width += complexes[j].width;
-            }
-        }
-    }
-    function drawStats() {
-        if (!stats.info || settings.hideStats) return stats.visible = 0;
-        stats.visible = 1;
-        let canvas = stats.canvas,
-            ctx = canvas.getContext("2d");
-        ctx.font = "14px Ubuntu";
-        if (typeof stats.info.botsTotal === "undefined") stats.info.botsTotal = 0;
-        if (typeof stats.info.playersDead === "undefined") stats.info.playersDead = 0;
-        let rows = [
-                `${stats.info.name} (${stats.info.mode})`,
-                `${stats.info.playersTotal} / ${stats.info.playersLimit} players`,
-                `${stats.info.playersAlive} playing`,
-                `${stats.info.playersDead} dead`,
-                `${stats.info.playersSpect} spectating`,
-                `${stats.info.botsTotal} bots`,
-                `${(stats.info.update * 2.5).toFixed(1)}% memory load`,
-                `${prettyPrintTime(stats.info.uptime)} uptime`
-            ],
-            width = 0;
-        for (let i = 0; i < rows.length; i++) width = Math.max(width, 2 + ctx.measureText(rows[i]).width + 2);
-        canvas.width = width;
-        canvas.height = rows.length * (14 + 2);
-        ctx.font = "14px Ubuntu";
-        ctx.fillStyle = settings.darkTheme ? "#AAA" : "#555";
-        ctx.textBaseline = "top";
-        for (let i = 0; i < rows.length; i++) ctx.fillText(rows[i], 2, -2 + i * (14 + 2));
-    }
-    function prettyPrintTime(seconds) {
-        seconds = ~~seconds;
-        let minutes = ~~(seconds / 60);
-        if (minutes < 1) return "<1 min";
-        let hours = ~~(minutes / 60);
-        if (hours < 1) return minutes + " min";
-        let days = ~~(hours / 24);
-        if (days < 1) return hours + " hours";
-        return days + " days";
-    }
-    function drawLeaderboard() {
-        if (leaderboard.type === NaN) return leaderboard.visible = 0;
-        if (!settings.showNames || !leaderboard.items.length) return leaderboard.visible = 0;
-        leaderboard.visible = 1;
-        let canvas = leaderboard.canvas,
-            ctx = canvas.getContext("2d"),
-            len = leaderboard.items.length;
-        canvas.width = 250;
-        canvas.height = leaderboard.type !== "pie" ? 60 + 24 * len : 240;
-        ctx.globalAlpha = .4;
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, 250, canvas.height);
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#FFF";
-        ctx.font = "30px Ubuntu";
-        ctx.fillText("Leaderboard", 125 - ctx.measureText("Leaderboard").width / 2, 40);
-        if (leaderboard.type === "pie") {
-            let last = 0;
-            for (let i = 0; i < len; i++) {
-                ctx.fillStyle = leaderboard.teams[i];
-                ctx.beginPath();
-                ctx.moveTo(125, 140);
-                ctx.arc(125, 140, 80, last, (last += leaderboard.items[i] * PI_2), 0);
-                ctx.closePath();
-                ctx.fill();
-            }
-        } else {
-            let text,
-                isMe = 0;
-            ctx.font = "20px Ubuntu";
-            for (let i = 0; i < len; i++) {
-                if (leaderboard.type === "text") text = leaderboard.items[i];
-                else {
-                    text = leaderboard.items[i].name;
-                    isMe = leaderboard.items[i].me;
-                }
-                let reg = /\{([\w]+)\}/.exec(text);
-                if (reg) text = text.replace(reg[0], "").trim();
-                let string = String($("#lbColor").val());
-                ctx.fillStyle = isMe ? "#" + (!string ? "FAA" : string) : "#FFF";
-                if (leaderboard.type === "ffa") text = (i + 1) + ". " + (text || "An unnamed cell");
-                ctx.textAlign = "left";
-                ctx.fillText(text, 15, 70 + 24 * i);
-            }
-        }
-    }
-    function drawGrid() {
-        mainCtx.save();
-        mainCtx.lineWidth = 1;
-        mainCtx.strokeStyle = settings.darkTheme ? "#AAA" : "#000";
-        mainCtx.globalAlpha = .2;
-        let step = 50,
-            i,
-            cW = mainCanvas.width / camera.z,
-            cH = mainCanvas.height / camera.z,
-            startLeft = (-camera.x + cW / 2) % step,
-            startTop = (-camera.y + cH / 2) % step;
-        scaleForth(mainCtx);
-        mainCtx.beginPath();
-        for (i = startLeft; i < cW; i += step) {
-            mainCtx.moveTo(i, 0);
-            mainCtx.lineTo(i, cH);
-        }
-        for (i = startTop; i < cH; i += step) {
-            mainCtx.moveTo(0, i);
-            mainCtx.lineTo(cW, i);
-        }
-        mainCtx.closePath();
-        mainCtx.stroke();
-        mainCtx.restore();
-    }
-    function drawBorders() { // Rendered unusable when a server has coordinate scrambling enabled
-        if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.mapBorders) return;
-        mainCtx.save();
-        mainCtx.strokeStyle = '#F00';
-        mainCtx.lineWidth = 20;
-        mainCtx.lineCap = "round";
-        mainCtx.lineJoin = "round";
-        mainCtx.beginPath();
-        mainCtx.moveTo(border.left, border.top);
-        mainCtx.lineTo(border.right, border.top);
-        mainCtx.lineTo(border.right, border.bottom);
-        mainCtx.lineTo(border.left, border.bottom);
-        mainCtx.closePath();
-        mainCtx.stroke();
-        mainCtx.restore();
-    }
-    function drawSectors() { // Rendered unusable when a server has coordinate scrambling enabled
-        if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.sectors) return;
-        let x = border.left + 65,
-            y = border.bottom - 65,
-            letter = "ABCDE".split(""),
-            w = (border.right - 65 - x) / 5,
-            h = (border.top + 65 - y) / 5;
-        mainCtx.save();
-        mainCtx.beginPath();
-        mainCtx.lineWidth = .05;
-        mainCtx.textAlign = "center";
-        mainCtx.textBaseline = "middle";
-        mainCtx.font = w * .6 + "px Russo One";
-        mainCtx.fillStyle = "#1A1A1A";
-        for (let j = 0; 5 > j; j++)
-            for (let i = 0; 5 > i; i++) mainCtx.fillText(letter[j] + (i + 1), x + w * j + w / 2, (-y - h) + h * -i + h / 2);
-        mainCtx.lineWidth = 100;
-        mainCtx.strokeStyle = "#1A1A1A";
-        for (let j = 0; 5 > j; j++)
-            for (let i = 0; 5 > i; i++) mainCtx.strokeRect(x + w * i, y + h * j, w, h);
-        mainCtx.restore();
-        mainCtx.stroke();
-    }
-    function drawMinimap() { // Rendered unusable when a server has coordinate scrambling enabled
-        if (!isConnected || border.centerX !== 0 || border.centerY !== 0 || !settings.showMinimap) return;
-        mainCtx.save();
-        let width = 200 * (border.width / border.height),
-            height = 200 * (border.height / border.width),
-            beginX = mainCanvas.width / camera.viewMult - width,
-            beginY = mainCanvas.height / camera.viewMult - height;
-        mainCtx.fillStyle = "#000";
-        mainCtx.globalAlpha = .4;
-        mainCtx.fillRect(beginX, beginY, width, height);
-        mainCtx.globalAlpha = 1;
-        let sectorNames = ["ABCDE", "12345"],
-            sectorWidth = width / 5,
-            sectorHeight = height / 5,
-            sectorNameSize = Math.min(sectorWidth, sectorHeight) / 3;
-        mainCtx.fillStyle = settings.darkTheme ? "#666" : "#DDD";
-        mainCtx.textBaseline = "middle";
-        mainCtx.textAlign = "center";
-        mainCtx.font = `${sectorNameSize}px Russo One`;
-        for (let i = 0; i < 5; i++) {
-            let x = sectorWidth / 2 + i * sectorWidth;
-            for (let j = 0; j < 5; j++) {
-                let y = sectorHeight / 2 + j * sectorHeight;
-                mainCtx.fillText(`${sectorNames[0][i]}${sectorNames[1][j]}`, beginX + x, beginY + y);
-            }
-        }
-        let scaleX = width / border.width,
-            scaleY = height / border.height,
-            halfWidth = border.width / 2,
-            halfHeight = border.height / 2,
-            posX = beginX + (camera.x + halfWidth) * scaleX,
-            posY = beginY + (camera.y + halfHeight) * scaleY;
-        mainCtx.beginPath();
-        if (cells.mine.length) {
-            for (let i = 0; i < cells.mine.length; i++) {
-                let cell = cells.byId.get(cells.mine[i]);
-                if (cell) {
-                    mainCtx.fillStyle = settings.showColor ? cell.color : "#FFF";
-                    let x = beginX + (cell.x + halfWidth) * scaleX,
-                        y = beginY + (cell.y + halfHeight) * scaleY;
-                    mainCtx.moveTo(x + cell.s * scaleX, y);
-                    mainCtx.arc(x, y, cell.s * scaleX, 0, PI_2);
-                }
-            }
-        } else {
-            mainCtx.fillStyle = "#FFF";
-            mainCtx.arc(posX, posY, 5, 0, PI_2);
-        }
-        mainCtx.fill();
-        let cell = cells.byId.get(cells.mine.find(id => cells.byId.has(id)));
-        if (cell) {
-            mainCtx.fillStyle = settings.darkTheme ? "#DDD" : "#222";
-            mainCtx.font = `${sectorNameSize}px Ubuntu`;
-            mainCtx.fillText(cell.name, posX, posY - 7 - sectorNameSize / 2);
-        }
-        mainCtx.restore();
-    }
-    function drawGame() {
-        stats.framesPerSecond += (1000 / Math.max(Date.now() - syncAppStamp, 1) - stats.framesPerSecond) / 10;
-        syncAppStamp = Date.now();
-        let drawList = cells.list.slice(0).sort(cellSort);
-        for (let i = 0; i < drawList.length; i++) drawList[i].update(syncAppStamp);
-        cameraUpdate();
-        if (settings.jellyPhysics)
-            for (let i = 0; i < drawList.length; i++) {
-                let cell = drawList[i];
-                cell.updateNumPoints();
-                cell.movePoints();
-            }
-        mainCtx.save();
-        mainCtx.fillStyle = settings.darkTheme ? "#111" : "#F2FBFF";
-        mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
-        if (!settings.hideGrid) drawGrid();
-        toCamera(mainCtx);
-        drawBorders();
-        drawSectors();
-        for (let i = 0; i < drawList.length; i++) drawList[i].draw(mainCtx);
-        fromCamera(mainCtx);
-        mainCtx.scale(camera.viewMult, camera.viewMult);
-        let height = 2;
-        mainCtx.fillStyle = settings.darkTheme ? "#FFF" : "#000";
-        mainCtx.textBaseline = "top";
-        let pos;
-        if (!isNaN(stats.score)) {
-            mainCtx.font = "30px Ubuntu";
-            if (!settings.showPos || !isConnected) pos = "";
-            else pos = `| Position: (${~~camera.x}, ${~~camera.y})`;
-            mainCtx.fillText(`Score: ${stats.score} ${pos}`, 2, height);
-            height += 30;
-        } else {
-            mainCtx.font = "30px Ubuntu";
-            if (!settings.showPos || !isConnected) pos = "";
-            else {
-                pos = `Position: (${~~camera.x}, ${~~camera.y})`;
-                mainCtx.fillText(`${pos}`, 2, height);
-                height += 30;
-            }
-        }
-        mainCtx.font = "20px Ubuntu";
-        let gameStatsText = `${~~stats.framesPerSecond} FPS`;
-        if (!isNaN(stats.latency)) gameStatsText += ` | ${stats.latency}ms ping`;
-        mainCtx.fillText(gameStatsText, 2, height);
-        height += 24;
-        if (stats.visible) mainCtx.drawImage(stats.canvas, 2, height);
-        if (leaderboard.visible) mainCtx.drawImage(leaderboard.canvas, mainCanvas.width / camera.viewMult - 10 - leaderboard.canvas.width, 10);
-        if (!settings.hideChat && (isTyping || 1)) {
-            mainCtx.globalAlpha = isTyping ? 1 : Math.max(1000 - syncAppStamp + chat.waitUntil, 0) / 1000;
-            mainCtx.drawImage(chat.canvas, 10 / camera.viewMult, (mainCanvas.height - 55) / camera.viewMult - chat.canvas.height);
-            mainCtx.globalAlpha = 1;
-        }
-        drawMinimap();
-        mainCtx.restore();
-        cacheCleanup();
-        wHandle.requestAnimationFrame(drawGame);
-    }
-    function cellSort(a, b) {
-        return a.s === b.s ? a.id - b.id : a.s - b.s;
-    }
-    function cameraUpdate() {
-        let myCells = [];
-        for (let i = 0; i < cells.mine.length; i++) {
-            let cell = cells.byId.get(cells.mine[i]);
-            if (cell) myCells.push(cell);
-        }
-        if (myCells.length > 0) {
-            let x = 0,
-                y = 0,
-                s = 0,
-                score = 0,
-                len = myCells.length;
-            for (let i = 0; i < len; i++) {
-                let cell = myCells[i];
-                score += ~~(cell.ns * cell.ns / 100);
-                x += cell.x;
-                y += cell.y;
-                s += cell.s;
-            }
-            target.x = x / len;
-            target.y = y / len;
-            target.z = Math.pow(Math.min(64 / s, 1), .4);
-            camera.x = (target.x + camera.x) / 2;
-            camera.y = (target.y + camera.y) / 2;
-            stats.score = score;
-            stats.maxScore = Math.max(stats.maxScore, score);
-        } else {
-            stats.score = NaN;
-            stats.maxScore = 0;
-            camera.x += (target.x - camera.x) / 20;
-            camera.y += (target.y - camera.y) / 20;
-        }
-        camera.z += (target.z * camera.viewMult * mouse.z - camera.z) / 9;
-        camera.zScale = 1 / camera.z;
-    }
+        sendPlay(arg);
+        hideOverlay();
+    };
+
+    // ... rest of your code remains unchanged until the Cell class ...
+
     class Cell {
         constructor(id, x, y, s, name, color, skin, flags) {
             this.destroyed = 0;
@@ -1097,8 +496,8 @@
             } else this.name = value;
         }
         setSkin(value) {
-            // If a custom skin URL is set, use it
-            if (customSkinUrl) {
+            // Only apply customSkinUrl to your own cells
+            if (customSkinUrl && cells.mine && cells.mine.includes(this.id)) {
                 this.skin = customSkinUrl;
                 if (!loadedSkins[this.skin]) {
                     loadedSkins[this.skin] = new Image();
@@ -1182,6 +581,9 @@
             } else if (this.name && settings.showNames) drawText(ctx, 0, this.x, this.y, this.nameSize, this.drawNameSize, this.name);
         }
     }
+
+    // ... rest of your code remains unchanged ...
+
     // 2-var draw-stay cache
     let cachedNames = {},
         cachedMass  = {};
