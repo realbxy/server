@@ -501,7 +501,7 @@
                 if (!loadedSkins[this.skin]) {
                     loadedSkins[this.skin] = new Image();
                     loadedSkins[this.skin].crossOrigin = "anonymous"; // Allow CORS images
-                    loadedSkins[this.skin].src = this.skin; // Use the custom URL as-is
+                    loadedSkins[this.skin].src = this.skin; // Use the custom URL as-is!
                 }
                 return;
             }
@@ -509,7 +509,7 @@
             this.skin = (value && value[0] === "%" ? value.slice(1) : value) || this.skin;
             if (this.skin == null || loadedSkins[this.skin]) return;
             loadedSkins[this.skin] = new Image();
-            loadedSkins[this.skin].src = value.startsWith("http") ? value : `${SKIN_URL}${this.skin}.png`; // Handle external URLs
+            loadedSkins[this.skin].src = `${SKIN_URL}${this.skin}.png`;
         }
         setColor(value) {
             if (!value) return log.warn("Returned no color!");
