@@ -1,1451 +1,177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ball.io Client</title>
-  <link rel="stylesheet" href="index.css" />
-  <style>
-    #canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 0;
-      width: 100vw;
-      height: 100vh;
-    }
-    .game-ui-wrapper {
-      position: relative;
-      z-index: 2;
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An agar.io client made for MultiOgar based servers.">
+    <meta name="keywords" content="agario, agar, io, cell, cells, virus, bacteria, blob, game, games, web game, html5, fun, flash">
+    <meta name="robots" content="index, follow">
+    <meta property="og:image" content="http://agar.io/img/1200x630.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="viewport" content="minimal-ui, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>MultiOgar Client</title>
+    <link id="favicon" rel="icon" type="image/png" href="assets/img/favicon.png" />
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu:700" rel="stylesheet" type="text/css">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/index.css" rel="stylesheet">
+    <script src="assets/js/jquery-1.11.3.min.js"></script>
+    <script src="assets/js/main_out.js"></script>
+    <script>
+        // Split macros
+        function split() {
+            $("body").trigger($.Event("keydown", {
+                keyCode: 32
+            }));
+            $("body").trigger($.Event("keyup", {
+                keyCode: 32
+            }));
+        }
+        function keydown(e) {
+            if (e.keyCode === 16)
+                for (let i = 0; i < 16; i++) setTimeout(split, 50 * i);
+            if (e.keyCode === 65)
+                for (let i = 0; i < 3; i++) setTimeout(split, 50 * i);
+            if (e.keyCode === 68)
+                for (let i = 0; i < 2; i++) setTimeout(split, 50 * i);
+        }
+        window.addEventListener("keydown", keydown);
+    </script>
 </head>
 <body>
-  <!-- Game canvas -->
-  <canvas id="canvas"></canvas>
-
-  <!-- Chat input required by engine -->
-  <input id="chat_textbox" type="text" style="display:none;" />
-
-  <!-- 🔧 INSERT YOUR CUSTOM UI DESIGN INSIDE THIS CONTAINER -->
-  <div id="main-menu" class="game-ui-wrapper">
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Game UI</title>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          background: linear-gradient(135deg, #0a0a0a, #2a2a2a);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 100vh;
-          font-family: 'Inter', sans-serif;
-        }
-    
-        .game-ui-wrapper {
-          width: 1008px;
-          height: 500px;
-          display: flex;
-          gap: 24px;
-          position: relative;
-        }
-    
-        .modal {
-          background: rgba(26 25 25 / 92%);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 28px;
-          box-shadow: 0 12px 50px rgba(0, 0, 0, 0.4);
-          color: white;
-          width: 320px;
-          min-width: 320px;
-          max-width: 320px;
-          display: flex;
-          flex-direction: column;
-          padding: 16px;
-        }
-    
-        .modal.full-height {
-          height: 543px;
-          min-height: 533px;
-          max-height: 500px;
-        }
-    
-        .right-column {
-          display: flex;
-          flex-direction: column;
-          width: 320px;
-          min-width: 320px;
-          max-width: 320px;
-          height: 500px;
-          min-height: 500px;
-          max-height: 500px;
-        }
-    
-        .profile-card {
-          width: 320px;
-          min-width: 320px;
-          max-width: 320px;
-          height: 116px;
-          min-height: 116px;
-          max-height: 116px;
-          margin-bottom: 16px;
-        }
-    
-        .tab-section {
-          width: 320px;
-          min-width: 320px;
-          max-width: 320px;
-          height: 368px;
-          min-height: 368px;
-          max-height: 368px;
-          display: flex;
-          flex-direction: column;
-        }
-    
-        .profile-card, .tab-section {
-          background: rgba(26 25 25 / 92%);
-          border-radius: 28px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 12px 50px rgba(0, 0, 0, 0.4);
-        }
-    
-        .tab-buttons {
-          display: flex;
-          margin-bottom: 16px;
-          height: 32px;
-          flex-shrink: 0;
-        }
-    
-        .tab-button {
-          flex: 1;
-          background: none;
-          border: none;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          padding: 8px 0;
-          text-align: center;
-          transition: transform 0.2s ease, color 0.2s ease;
-          position: relative;
-        }
-    
-        .tab-button:hover {
-          transform: scale(1.05);
-          color: white;
-        }
-    
-        .tab-button.active {
-          color: white;
-        }
-    
-        .tab-button.active::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 40%;
-          height: 2px;
-          background: rgba(255, 255, 255, 0.8);
-          border-radius: 2px;
-        }
-    
-        .tab-content {
-          flex: 1;
-          display: none;
-          min-height: 0;
-          overflow-y: auto;
-          padding-right: 8px;
-        }
-    
-        .tab-content::-webkit-scrollbar {
-          width: 8px;
-        }
-    
-        .tab-content::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 4px;
-          margin-right: 4px;
-        }
-    
-        .tab-content::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 4px;
-          transition: background 0.2s ease;
-        }
-    
-        .tab-content::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
-        }
-    
-        .tab-content.active {
-          display: flex;
-          flex-direction: column;
-        }
-    
-        .server-group {
-          margin-bottom: 20px;
-        }
-    
-        .server-header {
-          background: rgba(255, 255, 255, 0.12);
-          padding: 12px 16px;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          transition: background 0.2s ease, transform 0.2s ease;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-    
-        .server-header:hover {
-          background: rgba(255, 255, 255, 0.18);
-          transform: translateY(-2px);
-        }
-    
-        .server-header::after {
-          content: '▼';
-          font-size: 14px;
-          transition: transform 0.3s ease;
-        }
-    
-        .server-header.active::after {
-          transform: rotate(180deg);
-        }
-    
-        .server-list {
-          max-height: 0;
-          overflow: hidden;
-          transition: max-height 0.4s ease, opacity 0.3s ease;
-          opacity: 0;
-          margin-top: 8px;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-    
-        .server-list.active {
-          max-height: 300px;
-          opacity: 1;
-        }
-    
-        .server-item {
-          padding: 12px 16px;
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.9);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-    
-        .server-item:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          transform: translateX(4px);
-        }
-    
-        .server-item.active {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          border-left: 4px solid rgba(255, 255, 255, 0.8);
-          padding-left: 12px;
-        }
-    
-        .server-item:last-child {
-          border-bottom: none;
-        }
-    
-        .server-item svg {
-          width: 16px;
-          height: 16px;
-          stroke: white;
-          fill: none;
-        }
-    
-        .player-count {
-          margin-left: auto;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.7);
-        }
-    
-        .skins-container {
-          position: relative;
-          flex: 1;
-          overflow: hidden;
-          height: 304px;
-        }
-    
-        .skins-pages {
-          display: flex;
-          transition: transform 0.3s ease;
-          height: 100%;
-        }
-    
-        .skins-page {
-          flex: 0 0 100%;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-          justify-items: center;
-          align-items: center;
-          padding: 8px 0;
-        }
-    
-        .skin-circle {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          background-size: cover;
-          background-position: center;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          position: relative;
-          overflow: hidden;
-          transition: transform 0.3s ease, border 0.2s ease;
-          cursor: pointer;
-        }
-    
-        .skin-circle:hover {
-          transform: scale(1.05);
-        }
-    
-        .skin-circle.active {
-          border: 2px solid rgba(255, 255, 255, 0.8);
-        }
-    
-        .skin-circle::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -150%;
-          width: 75%;
-          height: 100%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
-          animation: shimmer 4s infinite ease-in-out;
-        }
-    
-        .add-skin {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          color: white;
-          transition: transform 0.3s ease;
-          cursor: pointer;
-        }
-    
-        .add-skin:hover {
-          transform: scale(1.05);
-        }
-    
-        .carousel-dots {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          margin-top: 8px;
-          height: 16px;
-          flex-shrink: 0;
-        }
-    
-        .carousel-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
-          cursor: pointer;
-          transition: background 0.2s ease;
-        }
-    
-        .carousel-dot.active {
-          background: rgba(255, 255, 255, 0.8);
-        }
-    
-        @keyframes shimmer {
-          0% { left: -150%; }
-          25% { left: 150%; }
-          100% { left: 150%; }
-        }
-    
-        .top-icons {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 16px;
-          gap: 6px;
-        }
-    
-        .top-icons button {
-          background: none;
-          border: none;
-          padding: 4px;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }
-    
-        .top-icons button:hover {
-          transform: scale(1.2);
-        }
-    
-        .top-icons svg {
-          width: 20px;
-          height: 20px;
-          stroke: white;
-          fill: none;
-        }
-    
-        .avatar-container {
-          height: 220px;
-          margin-top: 68px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          margin-bottom: 20px;
-          width: 100%;
-        }
-    
-        .avatar-button {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          font-size: 24px;
-          color: white;
-          cursor: pointer;
-          z-index: 1;
-          padding: 8px;
-          transition: transform 0.2s ease;
-        }
-    
-        .avatar-button:hover {
-          transform: translateY(-50%) scale(1.2);
-        }
-    
-        .avatar-button.left {
-          left: -16px;
-        }
-    
-        .avatar-button.right {
-          right: -16px;
-        }
-    
-        .avatar-logo {
-          width: 280px;
-          height: 280px;
-          border-radius: 50%;
-          background-size: cover;
-          background-position: center;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          position: relative;
-          overflow: hidden;
-          transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-    
-        .avatar-logo:hover,
-        .profile-picture:hover {
-          transform: scale(1.02);
-        }
-    
-        .avatar-logo::before,
-        .profile-picture::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -150%;
-          width: 75%;
-          height: 100%;
-          background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
-          animation: shimmer 4s infinite ease-in-out;
-        }
-    
-        .avatar-logo.transition {
-          opacity: 0;
-          transform: scale(0.9);
-        }
-    
-        .input-row {
-          display: flex;
-          margin-top: auto;
-          gap: 8px;
-        }
-    
-        .input-row input:first-child {
-          width: 65%;
-        }
-    
-        .input-row input:last-child {
-          width: 30%;
-        }
-    
-        .input-row input {
-          padding: 8px;
-          border-radius: 8px;
-          border: none;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          font-size: 13px;
-          transition: background 0.2s ease;
-        }
-    
-        .input-row input:focus {
-          background: rgba(255, 255, 255, 0.15);
-          outline: none;
-        }
-    
-        .skin-input {
-          margin-top: 8px;
-          display: flex;
-        }
-    
-        .skin-input input {
-          width: 100%;
-          padding: 8px;
-          border-radius: 8px;
-          border: none;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          font-size: 13px;
-          transition: background 0.2s ease;
-        }
-    
-        .skin-input input:focus {
-          background: rgba(255, 255, 255, 0.15);
-          outline: none;
-        }
-    
-        .play-section {
-          margin-top: 10px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-    
-        .play-section button {
-          padding: 8px;
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: background 0.2s ease, transform 0.2s ease;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-    
-        .play-section button:hover {
-          background: rgba(255, 255, 255, 0.3);
-          transform: scale(1.05);
-        }
-    
-        .play-btn {
-          flex: 1;
-        }
-    
-        .play-section svg {
-          width: 20px;
-          height: 20px;
-          stroke: white;
-          fill: none;
-        }
-    
-        .profile-picture {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          border: 1px solid rgba(255,255,255,0.2);
-          background-image: url('https://via.placeholder.com/60');
-          background-size: cover;
-          background-position: center;
-          position: relative;
-          overflow: hidden;
-          transition: transform 0.3s ease;
-        }
-    
-        /* Modal Overlay Styles */
-        .overlay-modal {
-        backdrop-filter: blur(2px);
-        height: 525px;
-        position: absolute;
-        top: 56.5%;
-        left: 55.1%;
-        transform: translate(-50%, -50%);
-        background: rgb(26 25 25 / 92%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 28px;
-        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.4);
-        color: white;
-        width: 314px;
-        max-height: 80vh;
-        padding: 20px;
-        z-index: 1000;
-        display: none; 
-        flex-direction: column;
-        overflow-y: auto;
-        }   
-    
-        .overlay-modal.active {
-          display: flex;
-        }
-    
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
-        }
-    
-        .modal-header h2 {
-          margin: 0;
-          font-size: 18px;
-          font-weight: 600;
-        }
-    
-        .close-modal {
-          background: none;
-          border: none;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 24px;
-          cursor: pointer;
-          transition: color 0.2s ease, transform 0.2s ease;
-        }
-    
-        .close-modal:hover {
-          color: white;
-          transform: scale(1.2);
-        }
-    
-        .modal-content {
-          flex: 1;
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.9);
-        }
-    
-        .modal-content label {
-          display: block;
-          margin: 6px 0;
-        }
-    
-        .modal-content input[type="checkbox"] {
-          margin-right: 8px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="game-ui-wrapper">
-        <div class="modal full-height">
-          <div class="tab-buttons" id="regionTabs">
-            <button class="tab-button active" onclick="showRegionTab('eu')">EU</button>
-            <button class="tab-button" onclick="showRegionTab('na')">NA</button>
-            <button class="tab-button" onclick="showRegionTab('as')">AS</button>
-          </div>
-          <div id="eu" class="tab-content active">
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Tournaments</div>
-              <div class="server-list eu-tournaments">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Tournament 1
-                  <span class="player-count">00/25</span>
+    <div class="modal fade" id="inPageModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 id="inPageModalTitle" class="modal-title">Failed to Load</h4>
                 </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Tournament 2
-                  <span class="player-count">00/25</span>
+                <div id="inPageModalBody" class="modal-body">
+                    <p>Failed to load. Please check your connection!</p>
+                    <div class="center">
+                        <div class="loader"></div>
+                    </div>
                 </div>
-              </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
             </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Localhost</div>
-              <div class="server-list eu-localhost">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Port 443
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Test Server
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Gigasplit</div>
-              <div class="server-list eu-gigasplit">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Gigasplit 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Gigasplit 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Self-Feed</div>
-              <div class="server-list eu-self-feed">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Self-Feed 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Self-Feed 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Instant</div>
-              <div class="server-list eu-instant">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Instant 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Instant 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div id="na" class="tab-content">
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Tournaments</div>
-              <div class="server-list na-tournaments">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Tournament 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Tournament 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Localhost</div>
-              <div class="server-list na-localhost">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Port 443
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Test Server
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Gigasplit</div>
-              <div class="server-list na-gigasplit">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Gigasplit 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Gigasplit 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Self-Feed</div>
-              <div class="server-list na-self-feed">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Self-Feed 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Self-Feed 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Instant</div>
-              <div class="server-list na-instant">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Instant 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Instant 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div id="as" class="tab-content">
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Tournaments</div>
-              <div class="server-list as-tournaments">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Tournament 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Tournament 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Localhost</div>
-              <div class="server-list as-localhost">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Port 443
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Test Server
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Gigasplit</div>
-              <div class="server-list as-gigasplit">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Gigasplit 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Gigasplit 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Self-Feed</div>
-              <div class="server-list as-self-feed">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Self-Feed 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Self-Feed 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-            <div class="server-group">
-              <div class="server-header" onclick="toggleDropdown(this)">Instant</div>
-              <div class="server-list as-instant">
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Instant 1
-                  <span class="player-count">00/25</span>
-                </div>
-                <div class="server-item" onclick="selectServer(this)">
-                  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                  Instant 2
-                  <span class="player-count">00/25</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-    
-        <div class="modal full-height">
-          <div class="top-icons">
-            <button title="Settings" onclick="openModal('settings-modal')">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09c.7 0 1.3-.4 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09c0 .7.4 1.3 1 1.51a1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.18c0 .7 .4 1.3 1 1.51H21a2 2 0 0 1 0 4h-.09c-.7 0-1.3.4-1.51 1z"/></svg>
-            </button>
-            <button title="Palette" onclick="openModal('palette-modal')">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="6.5" cy="9.5" r="1.5"/><circle cx="17.5" cy="9.5" r="1.5"/><circle cx="12" cy="14.5" r="1.5"/></svg>
-            </button>
-            <button title="Keyboard" onclick="openModal('keyboard-modal')">
-              <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12"/></svg>
-            </button>
-            <button title="Camera" onclick="openModal('camera-modal')">
-              <svg viewBox="0 0 24 24"><path d="M15 10l4.55-2.27A2 2 0 0 1 22 9.618v4.764a2 2 0 0 1-2.45 1.887L15 14"/><rect x="2" y="6" width="13" height="12" rx="2" ry="2"/></svg>
-            </button>
-            <button title="Clipboard" onclick="openModal('clipboard-modal')">
-              <svg viewBox="0 0 24 24"><path d="M16 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><rect x="9" y="2" width="6" height="4" rx="1" ry="1"/></svg>
-            </button>
-          </div>
-          <div class="avatar-container">
-            <button class="avatar-button left" onclick="cycleSkin(-1)">◀</button>
-            <div class="avatar-logo" id="skinPreview"></div>
-            <button class="avatar-button right" onclick="cycleSkin(1)">▶</button>
-          </div>
-          <div class="input-row">
-            <input type="text" id="nickname" placeholder="Nickname" />
-            <input type="text" id="tag" placeholder="Tag" />
-          </div>
-          <div class="skin-input">
-            <input type="text" id="skinLink" placeholder="Paste skin URL..." oninput="updateSkinPreviewAndCircle(this.value)" />
-          </div>
-          <div class="play-section">
-            <button class="play-btn">▶ Play</button>
-            <button title="Spectate">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M22 12s-4-8-10-8-10 8-10 8 4 8 10 8 10-8 10-8z"/></svg>
-            </button>
-          </div>
-        </div>
-    
-        <div class="right-column">
-          <div class="modal profile-card" style="position: relative;">
-            <div style="position: absolute; top: 12px; right: 12px; cursor: pointer;">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="white" fill="none"><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/><path d="M13 5v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2"/></svg>
-            </div>
-            <div style="display: flex; gap: 12px; align-items: center;">
-              <div class="profile-picture"></div>
-              <div style="display: flex; flex-direction: column; gap: 2px;">
-                <div style="font-weight: 600; color: white; font-size: 15px;">DiscordUser#1234</div>
-                <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">1,234,567 total XP</div>
-                <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">23,456 season XP</div>
-              </div>
-            </div>
-            <div style="margin-top: auto; background: rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; height: 20px;">
-              <div style="width: 45%; background: white; height: 100%; border-radius: 8px 0 0 8px;"></div>
-            </div>
-            <div style="margin-top: 4px; font-size: 12px; display: flex; justify-content: space-between; color: rgba(255,255,255,0.6);">
-              <span>Level 234</span>
-              <span>5522500</span>
-            </div>
-          </div>
-          <div class="modal tab-section">
-            <div class="tab-buttons" id="featureTabs">
-              <button class="tab-button active" onclick="showFeatureTab('skins')">Skins</button>
-              <button class="tab-button" onclick="showFeatureTab('perks')">Perks</button>
-            </div>
-            <div id="skins" class="tab-content active">
-              <div class="skins-container">
-                <div class="skins-pages" id="skinsPages">
-                  <div class="skins-page">
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/FF0000" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/00FF00" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/0000FF" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/FFFF00" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/FF00FF" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/00FFFF" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/FFA500" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="skin-circle" data-skin-url="https://via.placeholder.com/80/800080" onclick="selectSkin(this)" ondblclick="removeSkin(this)"></div>
-                    <div class="add-skin" onclick="addSkin()">+</div>
-                  </div>
+    </div>
+    <div id="overlays">
+        <div id="helloDialog">
+            <form role="form">
+                <div class="form-group">
+                    <h2 id="title">MultiOgar Client</h2>
                 </div>
-              </div>
-              <div class="carousel-dots" id="carouselDots"></div>
+                <div class="form-group">
+                    <input id="nick" class="form-control save" data-box-id="0" placeholder="Nickname" maxlength="30" />
+                    <input id="skin-url" class="form-control save" data-box-id="100" placeholder="Skin Image URL (optional)" maxlength="300" style="margin-top:6px;" />
+                    <select id="gamemode" class="form-control" onchange="setServer($(this).val());" required>
+                        <option selected disabled>Servers:</option>
+                        <option value="127.0.0.1:443">Local 443</option>
+                        <option value="216.146.25.15:443">Test Server</option>
+                    </select>
+                    <br clear="both" />
+                </div>
+                <div class="form-group">
+                    <div class="mb-10">
+                        <a data-toggle="modal" data-target="#inPageModal" onclick="openSkinsList();" class="btn-primary btn btn-info" role="button" style="width: 100%;">Skins Gallery</a>
+                    </div>
+                    <button type="button" id="play-btn" onclick="play(document.getElementById('nick').value); return false;" class="btn btn-play btn-primary btn-needs-server">Play</button>
+                    <button onclick="$('#settings, #instructions').toggle(); return false;" class="btn btn-info btn-settings" id="settings-btn"><i class="glyphicon glyphicon-cog"></i></button>
+                    <br clear="both" />
+                </div>
+                <div id="settings" class="checkbox" style="display:none;">
+                    <div class="form-group" id="mainform">
+                        <button id="spectate-btn" onclick="spectate(); return false;" style="width: 100%" class="btn btn-warning btn-spectate btn-needs-server">Spectate
+                        </button>
+                        <br clear="both" />
+                    </div>
+                    <div style="margin: 6px;">
+                        <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(!$(this).is(':checked'));">Hide Skins</label>
+                        <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(!$(this).is(':checked'));">Hide Names</label>
+                        <label><input type="checkbox" class="save" data-box-id="4" onchange="setColors($(this).is(':checked'));">Hide Colors</label>
+                        <label><input type="checkbox" class="save" data-box-id="7" onchange="setChatHide($(this).is(':checked'));">Hide Chat</label>
+                        <label><input type="checkbox" class="save" data-box-id="8" onchange="setMinimap($(this).is(':checked'));">Hide Minimap</label>
+                        <label><input type="checkbox" class="save" data-box-id="10" onchange="setGrid($(this).is(':checked'));">Hide Grid</label>
+                        <label><input type="checkbox" class="save" data-box-id="17" onchange="setFood($(this).is(':checked'));">Hide Food</label>
+                        <label><input type="checkbox" class="save" data-box-id="13" onchange="setStats($(this).is(':checked'));">Hide Stats</label>
+                        <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass($(this).is(':checked'));">Show Mass</label>
+                        <label><input type="checkbox" class="save" data-box-id="3" onchange="setDarkTheme($(this).is(':checked'));">Dark Theme</label>
+                        <label><input type="checkbox" class="save" data-box-id="9" onchange="setCellBorder($(this).is(':checked'));" checked>Cell Borders</label>
+                        <label><input type="checkbox" class="save" data-box-id="18" onchange="setJelly($(this).is(':checked'));">Jelly Physics</label>
+                        <label><input type="checkbox" class="save" data-box-id="16" onchange="setTextOutline($(this).is(':checked'));" checked>Text Outline</label>
+                        <label><input type="checkbox" class="save" data-box-id="11" onchange="setZoom($(this).is(':checked'));">Infinite Zoom</label>
+                        <label><input type="checkbox" class="save" data-box-id="12" onchange="setTransparency($(this).is(':checked'));">Transparent</label>
+                        <label><input type="checkbox" class="save" data-box-id="14" onchange="setMapBorders($(this).is(':checked'));">Map Borders</label>
+                        <label><input type="checkbox" class="save" data-box-id="15" onchange="setSectors($(this).is(':checked'));">Map Sectors</label>
+                        <label><input type="checkbox" class="save" data-box-id="16" onchange="setCellPos($(this).is(':checked'));">Cell Position</label>
+                        <!--add hide stats option later-->
+                        <p> </p>
+                        <table>
+                            <tr>
+                                <td>
+                                    <label>LB Text Color (you)</label>
+                                    <input class="form-control" id="lbColor" placeholder="Default HEX = FAA" value="" style="width:180px;">
+                                </td>
+                                <td>
+                                    <label>Name Text Color</label>
+                                    <input class="form-control" id="nameColor" placeholder="Default HEX = FFF" value="" style="width:180px;">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label>Cell Border Color</label>
+                                    <input class="form-control" id="cellBorderColor" placeholder="Default HEX = 000" value="" style="width:180px;">
+                                </td>
+                                <td>
+                                    <label>Sound Volume</label>
+                                    <input class="form-control" id="soundsVolume" placeholder="Default = 0.5 | Max = 1" value="" step="0.1" type="number" min="0" max="1" style="width:180px;">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </form>
+            <div id="instructions">
+                <hr/>
+                <center>
+                    <span class="text-muted">
+            			Move your <b>Mouse</b> to control your cell<br/>
+            			Press <b>Space</b> to split<br/>
+            			Press <b>W</b> to eject mass<br/>
+            			Press <b>E</b> to split minions<br/>
+            			Press <b>R</b> to make minions eject mass<br/>
+            			Press <b>T</b> to freeze/unfreeze minions<br/>
+            			Press <b>P</b> to make minions collect food<br/>
+            		    Press <b>Q</b> (in-game) to make minions follow your cell<br/>
+                	</span>
+                </center>
             </div>
-            <div id="perks" class="tab-content">
-              <!-- Perks content goes here -->
+            <div id="footer">
+                <hr/>
+                <!--Credits-->
+                <a href="https://github.com/agarian-2/MultiOgar" class="text-muted" target="_blank">GitHub - My MultiOgar</a><br>
+                <a href="https://github.com/Barbosik/MultiOgar" class="text-muted" target="_blank">GitHub - Original MultiOgar</a><br>
+                <a href="https://github.com/Megabyte918/MultiOgar-Edited" class="text-muted" target="_blank">GitHub - MultiOgar-Edited</a><br>
+                <a href="https://github.com/CigarProject/Cigar" class="text-muted" target="_blank">GitHub - CigarProject</a><br>
+                <a href="https://github.com/Cigar2/Cigar2" class="text-muted" target="_blank">GitHub - Cigar2</a><br>
+                <a href="https://github.com/Luka967/Cigar" class="text-muted" target="_blank">GitHub - Luka967's Cigar</a><br>
             </div>
-          </div>
         </div>
-    
-        <!-- Overlay Modals -->
-        <div id="settings-modal" class="overlay-modal">
-          <div class="modal-header">
-            <h2>Settings</h2>
-            <button class="close-modal" onclick="closeModal('settings-modal')">×</button>
-          </div>
-          <div class="modal-content">
-            <div style="margin: 6px;">
-              <label><input type="checkbox" class="save" data-box-id="1" onchange="setSkins(!this.checked);">Hide Skins</label>
-              <label><input type="checkbox" class="save" data-box-id="2" onchange="setNames(!this.checked);">Hide Names</label>
-              <label><input type="checkbox" class="save" data-box-id="4" onchange="setColors(this.checked);">Hide Colors</label>
-              <label><input type="checkbox" class="save" data-box-id="7" onchange="setChatHide(this.checked);">Hide Chat</label>
-              <label><input type="checkbox" class="save" data-box-id="8" onchange="setMinimap(this.checked);">Hide Minimap</label>
-              <label><input type="checkbox" class="save" data-box-id="10" onchange="setGrid(this.checked);">Hide Grid</label>
-              <label><input type="checkbox" class="save" data-box-id="17" onchange="setFood(this.checked);">Hide Food</label>
-              <label><input type="checkbox" class="save" data-box-id="13" onchange="setStats(this.checked);">Hide Stats</label>
-              <label><input type="checkbox" class="save" data-box-id="5" onchange="setShowMass(this.checked);">Show Mass</label>
-              <label><input type="checkbox" class="save" data-box-id="3" onchange="setDarkTheme(this.checked);">Dark Theme</label>
-              <label><input type="checkbox" class="save" data-box-id="9" onchange="setCellBorder(this.checked);" checked>Cell borders</label>
-              <label><input type="checkbox" class="save" data-box-id="18" onchange="setJelly(this.checked);">Jelly Physics</label>
-              <label><input type="checkbox" class="save" data-box-id="16" onchange="setTextOutline(this.checked);" checked>Text Outline</label>
-              <label><input type="checkbox" class="save" data-box-id="11" onchange="setZoom(this.checked);">Infinite Zoom</label>
-              <label><input type="checkbox" class="save" data-box-id="12" onchange="setTransparency(this.checked);">Transparent</label>
-              <label><input type="checkbox" class="save" data-box-id="14" onchange="setMapBorders(this.checked);">Map Borders</label>
-              <label><input type="checkbox" class="save" data-box-id="15" onchange="setSectors(this.checked);">Map Sectors</label>
-              <label><input type="checkbox" class="save" data-box-id="16" onchange="setCellPos(this.checked);">Cell Position</label>
-            </div>
-          </div>
+    </div>
+    <div id="connecting">
+        <div style="width: 350px; background-color: #FFFFFF; margin: 100px auto; border-radius: 15px; padding: 5px 15px 5px 15px;">
+            <h2>Connecting...</h2>
+            <p> If you cannot connect to the server, check if you have an antivirus or firewall blocking the connection.</p>
         </div>
-    
-        <div id="palette-modal" class="overlay-modal">
-          <div class="modal-header">
-            <h2>Palette</h2>
-            <button class="close-modal" onclick="closeModal('palette-modal')">×</button>
-          </div>
-          <div class="modal-content">
-            <p>Placeholder content for Palette settings.</p>
-          </div>
-        </div>
-    
-        <div id="keyboard-modal" class="overlay-modal">
-          <div class="modal-header">
-            <h2>Keyboard</h2>
-            <button class="close-modal" onclick="closeModal('keyboard-modal')">×</button>
-          </div>
-          <div class="modal-content">
-            <p>Placeholder content for Keyboard settings.</p>
-          </div>
-        </div>
-    
-        <div id="camera-modal" class="overlay-modal">
-          <div class="modal-header">
-            <h2>Camera</h2>
-            <button class="close-modal" onclick="closeModal('camera-modal')">×</button>
-          </div>
-          <div class="modal-content">
-            <p>Placeholder content for Camera settings.</p>
-          </div>
-        </div>
-    
-        <div id="clipboard-modal" class="overlay-modal">
-          <div class="modal-header">
-            <h2>Clipboard</h2>
-            <button class="close-modal" onclick="closeModal('clipboard-modal')">×</button>
-          </div>
-          <div class="modal-content">
-            <p>Placeholder content for Clipboard settings.</p>
-          </div>
-        </div>
-      </div>
-    
-      <script>
-        let activeSkinCircle = null;
-        let currentPage = 0;
-        const itemsPerPage = 9;
-        const maxPages = 10;
-        let currentSkinIndex = 0;
-        let activeServerItem = null;
-    
-        function updateSkinPreview(url) {
-          const skinPreview = document.getElementById('skinPreview');
-          skinPreview.classList.add('transition');
-          setTimeout(() => {
-            skinPreview.style.backgroundImage = `url('${url}')`;
-            skinPreview.classList.remove('transition');
-          }, 150);
-        }
-    
-        function showRegionTab(tabName) {
-          const tabs = document.querySelectorAll('#regionTabs ~ .tab-content');
-          const buttons = document.querySelectorAll('#regionTabs .tab-button');
-          tabs.forEach(tab => tab.classList.remove('active'));
-          buttons.forEach(button => button.classList.remove('active'));
-          document.getElementById(tabName).classList.add('active');
-          document.querySelector(`#regionTabs [onclick="showRegionTab('${tabName}')"]`).classList.add('active');
-        }
-    
-        function showFeatureTab(tabName) {
-          const tabs = document.querySelectorAll('#featureTabs ~ .tab-content');
-          const buttons = document.querySelectorAll('#featureTabs .tab-button');
-          tabs.forEach(tab => tab.classList.remove('active'));
-          buttons.forEach(button => button.classList.remove('active'));
-          document.getElementById(tabName).classList.add('active');
-          document.querySelector(`#featureTabs [onclick="showFeatureTab('${tabName}')"]`).classList.add('active');
-        }
-    
-        function toggleDropdown(header) {
-          const list = header.nextElementSibling;
-          header.classList.toggle('active');
-          list.classList.toggle('active');
-        }
-    
-        function selectSkin(element) {
-          if (activeSkinCircle) {
-            activeSkinCircle.classList.remove('active');
-          }
-          activeSkinCircle = element;
-          activeSkinCircle.classList.add('active');
-    
-          const skinUrl = element.getAttribute('data-skin-url');
-          updateSkinPreview(skinUrl);
-          document.getElementById('skinLink').value = skinUrl;
-    
-          const allSkins = Array.from(document.querySelectorAll('.skin-circle'));
-          currentSkinIndex = allSkins.indexOf(element);
-          localStorage.setItem('activeSkinUrl', skinUrl);
-        }
-    
-        function updateSkinPreviewAndCircle(url) {
-          updateSkinPreview(url);
-          if (activeSkinCircle) {
-            activeSkinCircle.setAttribute('data-skin-url', url);
-            activeSkinCircle.style.backgroundImage = `url('${url}')`;
-            localStorage.setItem('activeSkinUrl', url);
-          }
-          localStorage.setItem('skinLink', url);
-        }
-    
-        function cycleSkin(direction) {
-          const allSkins = Array.from(document.querySelectorAll('.skin-circle'));
-          if (allSkins.length === 0) return;
-    
-          currentSkinIndex = (currentSkinIndex + direction + allSkins.length) % allSkins.length;
-          const selectedSkin = allSkins[currentSkinIndex];
-          
-          if (activeSkinCircle) {
-            activeSkinCircle.classList.remove('active');
-          }
-          activeSkinCircle = selectedSkin;
-          activeSkinCircle.classList.add('active');
-    
-          const skinUrl = selectedSkin.getAttribute('data-skin-url');
-          updateSkinPreview(skinUrl);
-          document.getElementById('skinLink').value = skinUrl;
-          localStorage.setItem('activeSkinUrl', skinUrl);
-    
-          const newPage = Math.floor(currentSkinIndex / itemsPerPage);
-          if (newPage !== currentPage) {
-            currentPage = newPage;
-            updateCarousel();
-          }
-        }
-    
-        function selectServer(element) {
-          if (activeServerItem) {
-            activeServerItem.classList.remove('active');
-          }
-          activeServerItem = element;
-          activeServerItem.classList.add('active');
-        }
-    
-        function updateCarousel() {
-          const pages = document.querySelectorAll('.skins-page');
-          const pagesContainer = document.getElementById('skinsPages');
-          const dotsContainer = document.getElementById('carouselDots');
-    
-          if (pages.length === 0) return;
-    
-          currentPage = Math.min(Math.max(currentPage, 0), pages.length - 1);
-          pagesContainer.style.transform = `translateX(-${currentPage * 100}%)`;
-    
-          dotsContainer.innerHTML = '';
-          for (let i = 0; i < pages.length; i++) {
-            const dot = document.createElement('div');
-            dot.classList.add('carousel-dot');
-            if (i === currentPage) dot.classList.add('active');
-            dot.addEventListener('click', () => {
-              currentPage = i;
-              updateCarousel();
-            });
-            dotsContainer.appendChild(dot);
-          }
-        }
-    
-        function addSkin() {
-          const allSkins = document.querySelectorAll('.skin-circle').length;
-          if (allSkins >= maxPages * itemsPerPage) return;
-    
-          const pages = document.querySelectorAll('.skins-page');
-          let targetPage = null;
-    
-          for (let i = 0; i < pages.length; i++) {
-            const items = pages[i].querySelectorAll('.skin-circle');
-            if (items.length < itemsPerPage) {
-              targetPage = pages[i];
-              break;
-            }
-          }
-    
-          if (!targetPage && pages.length < maxPages) {
-            targetPage = document.createElement('div');
-            targetPage.classList.add('skins-page');
-            document.getElementById('skinsPages').appendChild(targetPage);
-          }
-    
-          const addButton = document.querySelector('.add-skin');
-          if (addButton) {
-            const newSkin = document.createElement('div');
-            newSkin.classList.add('skin-circle');
-            newSkin.setAttribute('data-skin-url', 'https://via.placeholder.com/80/CCCCCC');
-            newSkin.style.backgroundImage = `url('https://via.placeholder.com/80/CCCCCC')`;
-            newSkin.addEventListener('click', () => selectSkin(newSkin));
-            newSkin.addEventListener('dblclick', () => removeSkin(newSkin));
-            addButton.parentNode.insertBefore(newSkin, addButton);
-            addButton.remove();
-          }
-    
-          const updatedPages = document.querySelectorAll('.skins-page');
-          let addedButton = false;
-          for (let i = updatedPages.length - 1; i >= 0; i--) {
-            const items = updatedPages[i].querySelectorAll('.skin-circle');
-            if (items.length < itemsPerPage && allSkins + 1 < maxPages * itemsPerPage) {
-              const newAddButton = document.createElement('div');
-              newAddButton.classList.add('add-skin');
-              newAddButton.textContent = '+';
-              newAddButton.addEventListener('click', addSkin);
-              updatedPages[i].appendChild(newAddButton);
-              addedButton = true;
-              break;
-            }
-          }
-    
-          if (!addedButton && updatedPages.length < maxPages) {
-            const newPage = document.createElement('div');
-            newPage.classList.add('skins-page');
-            const newAddButton = document.createElement('div');
-            newAddButton.classList.add('add-skin');
-            newAddButton.textContent = '+';
-            newAddButton.addEventListener('click', addSkin);
-            newPage.appendChild(newAddButton);
-            document.getElementById('skinsPages').appendChild(newPage);
-          }
-    
-          saveSkinsToStorage();
-          updateCarousel();
-        }
-    
-        function removeSkin(element) {
-          const allSkins = Array.from(document.querySelectorAll('.skin-circle'));
-          const index = allSkins.indexOf(element);
-          if (index === -1) return;
-    
-          if (activeSkinCircle === element) {
-            activeSkinCircle = null;
-            if (allSkins.length > 1) {
-              const nextIndex = index === allSkins.length - 1 ? index - 1 : index;
-              selectSkin(allSkins[nextIndex]);
-            } else {
-              document.getElementById('skinPreview').style.backgroundImage = '';
-              document.getElementById('skinLink').value = '';
-              localStorage.removeItem('activeSkinUrl');
-            }
-          }
-    
-          element.remove();
-          const page = element.closest('.skins-page');
-          if (page.querySelectorAll('.skin-circle').length === 0) {
-            page.remove();
-          }
-    
-          const pages = document.querySelectorAll('.skins-page');
-          if (pages.length > 0 && !document.querySelector('.add-skin') && allSkins.length - 1 < maxPages * itemsPerPage) {
-            const lastPage = pages[pages.length - 1];
-            const items = lastPage.querySelectorAll('.skin-circle');
-            if (items.length < itemsPerPage) {
-              const addButton = document.createElement('div');
-              addButton.classList.add('add-skin');
-              addButton.textContent = '+';
-              addButton.addEventListener('click', addSkin);
-              lastPage.appendChild(addButton);
-            }
-          }
-    
-          saveSkinsToStorage();
-          updateCarousel();
-        }
-    
-        function saveSkinsToStorage() {
-          const allSkins = Array.from(document.querySelectorAll('.skin-circle')).map(skin => skin.getAttribute('data-skin-url'));
-          localStorage.setItem('skins', JSON.stringify(allSkins));
-        }
-    
-        function loadSkinsFromStorage() {
-          const savedSkins = JSON.parse(localStorage.getItem('skins') || '[]');
-          const defaultSkins = [
-            'https://via.placeholder.com/80/FF0000',
-            'https://via.placeholder.com/80/00FF00',
-            'https://via.placeholder.com/80/0000FF',
-            'https://via.placeholder.com/80/FFFF00',
-            'https://via.placeholder.com/80/FF00FF',
-            'https://via.placeholder.com/80/00FFFF',
-            'https://via.placeholder.com/80/FFA500',
-            'https://via.placeholder.com/80/800080'
-          ];
-          const skinsToLoad = savedSkins.length > 0 ? savedSkins : defaultSkins;
-    
-          const pagesContainer = document.getElementById('skinsPages');
-          pagesContainer.innerHTML = '';
-    
-          let currentPageDiv = null;
-          skinsToLoad.forEach((skinUrl, index) => {
-            if (index % itemsPerPage === 0) {
-              currentPageDiv = document.createElement('div');
-              currentPageDiv.classList.add('skins-page');
-              pagesContainer.appendChild(currentPageDiv);
-            }
-            const skin = document.createElement('div');
-            skin.classList.add('skin-circle');
-            skin.setAttribute('data-skin-url', skinUrl);
-            skin.style.backgroundImage = `url('${skinUrl}')`;
-            skin.addEventListener('click', () => selectSkin(skin));
-            skin.addEventListener('dblclick', () => removeSkin(skin));
-            currentPageDiv.appendChild(skin);
-          });
-    
-          const pages = document.querySelectorAll('.skins-page');
-          if (skinsToLoad.length < maxPages * itemsPerPage) {
-            const lastPage = pages[pages.length - 1] || pagesContainer.appendChild(document.createElement('div'));
-            if (!lastPage.classList.contains('skins-page')) lastPage.classList.add('skins-page');
-            if (lastPage.querySelectorAll('.skin-circle').length < itemsPerPage) {
-              const addButton = document.createElement('div');
-              addButton.classList.add('add-skin');
-              addButton.textContent = '+';
-              addButton.addEventListener('click', addSkin);
-              lastPage.appendChild(addButton);
-            }
-          }
-    
-          updateCarousel();
-        }
-    
-        function saveInputs() {
-          localStorage.setItem('nickname', document.getElementById('nickname').value);
-          localStorage.setItem('tag', document.getElementById('tag').value);
-        }
-    
-        function loadInputs() {
-          const nickname = localStorage.getItem('nickname') || '';
-          const tag = localStorage.getItem('tag') || '';
-          document.getElementById('nickname').value = nickname;
-          document.getElementById('tag').value = tag;
-        }
-    
-        // Modal Functions
-        function openModal(modalId) {
-          document.getElementById(modalId).classList.add('active');
-        }
-    
-        function closeModal(modalId) {
-          document.getElementById(modalId).classList.remove('active');
-        }
-    
-        // Placeholder functions for settings (to be implemented later)
-        function setSkins(value) { console.log('Set Skins:', value); }
-        function setNames(value) { console.log('Set Names:', value); }
-        function setColors(value) { console.log('Set Colors:', value); }
-        function setChatHide(value) { console.log('Set Chat Hide:', value); }
-        function setMinimap(value) { console.log('Set Minimap:', value); }
-        function setGrid(value) { console.log('Set Grid:', value); }
-        function setFood(value) { console.log('Set Food:', value); }
-        function setStats(value) { console.log('Set Stats:', value); }
-        function setShowMass(value) { console.log('Set Show Mass:', value); }
-        function setDarkTheme(value) { console.log('Set Dark Theme:', value); }
-        function setCellBorder(value) { console.log('Set Cell Border:', value); }
-        function setJelly(value) { console.log('Set Jelly Physics:', value); }
-        function setTextOutline(value) { console.log('Set Text Outline:', value); }
-        function setZoom(value) { console.log('Set Infinite Zoom:', value); }
-        function setTransparency(value) { console.log('Set Transparency:', value); }
-        function setMapBorders(value) { console.log('Set Map Borders:', value); }
-        function setSectors(value) { console.log('Set Map Sectors:', value); }
-        function setCellPos(value) { console.log('Set Cell Position:', value); }
-    
-        document.addEventListener('DOMContentLoaded', () => {
-          loadSkinsFromStorage();
-          loadInputs();
-    
-          const savedSkinUrl = localStorage.getItem('activeSkinUrl');
-          if (savedSkinUrl) {
-            const allSkins = Array.from(document.querySelectorAll('.skin-circle'));
-            const savedSkin = allSkins.find(skin => skin.getAttribute('data-skin-url') === savedSkinUrl);
-            if (savedSkin) {
-              selectSkin(savedSkin);
-            } else if (allSkins.length > 0) {
-              selectSkin(allSkins[0]);
-            }
-          } else if (document.querySelector('.skin-circle')) {
-            selectSkin(document.querySelector('.skin-circle'));
-          }
-    
-          document.getElementById('nickname').addEventListener('input', saveInputs);
-          document.getElementById('tag').addEventListener('input', saveInputs);
-        });
-      </script>
-    </body>
-    </html>
-    <!-- Example: nickname input, play button, server list -->
-    <!-- Your full custom design goes here -->
-  </div>
-
-  <!-- Scripts -->
-  <script src="jquery-1.11.3.min.js"></script>
-  <script src="bootstrap.min.js"></script>
-  <script src="main_out.js"></script>
-
-  <script>
-    function getSelectedServerAddress() {
-      const active = document.querySelector('.server-item.active');
-      if (!active) return null;
-
-      const label = active.textContent.trim();
-      if (label.includes('443')) return '127.0.0.1:443';
-      if (label.includes('Tournament')) return '127.0.0.1:444';
-      return '127.0.0.1:443';
-    }
-
-    window.addEventListener('load', function () {
-      const playBtn = document.querySelector('.play-btn');
-      if (!playBtn) return;
-
-      playBtn.addEventListener('click', () => {
-        const nick = document.getElementById('nickname')?.value || 'Player';
-        const skin = document.getElementById('skinLink')?.value || '';
-        const server = getSelectedServerAddress();
-
-        if (!nick || !server) {
-          alert('Please enter a nickname and select a server.');
-          return;
-        }
-
-        if (typeof wsInit !== 'function') {
-          alert('Game engine not loaded!');
-          return;
-        }
-
-        wsInit(server);
-
-        setTimeout(() => {
-          const writer = new Writer(true);
-          writer.setUint8(0);
-          writer.setStringUTF8(nick);
-          writer.setStringUTF8(skin);
-          wsSend(writer);
-
-          const menu = document.getElementById('main-menu');
-          if (menu) menu.style.display = 'none';
-        }, 500);
-      });
-    });
-  </script>
+    </div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <input type="text" id="chat_textbox" placeholder="Press enter to chat" maxlength="200" />
+    <div style="font-family:'Ubuntu'">&nbsp;</div>
+    <script src="assets/js/bootstrap.min.js"></script>
 </body>
 </html>
