@@ -333,7 +333,9 @@
             esc: 0
         },
         eatSound = new Sound("./assets/sound/eat.mp3", .5, 10),
-        pelletSound = new Sound("./assets/sound/pellet.mp3", .5, 10);
+        pelletSound = new Sound("./assets/sound/pellet.mp3", .5, 10),
+        customSkinUrl = null;
+
     function wsCleanup() {
         if (!ws) return;
         log.debug("WS cleanup triggered!");
@@ -415,7 +417,7 @@
                     killed = reader.getUint32();
                     let _cell = cells.byId.get(killed);
                     if (!cells.byId.has(killer) || !cells.byId.has(killed)) continue;
-                    //if (soundsVolume.value && cells.mine.includes(killer) && syncUpdStamp - _cell.born > 100) (_cell.s < 20 ? pelletSound : eatSound).play(parseFloat(soundsVolume.value));
+                    if (soundsVolume.value && cells.mine.includes(killer) && syncUpdStamp - _cell.born > 100) (_cell.s < 20 ? pelletSound : eatSound).play(parseFloat(soundsVolume.value));
                     _cell.destroy(killer);
                 }
                 // Update records
@@ -607,6 +609,16 @@
                 value = id < 1 ? wjQuery(this).val() : wjQuery(this).prop("checked");
             wHandle.localStorage.setItem("checkbox-" + id, value);
         });
+
+        // Restore skin-url input
+        const skinInput = document.getElementById("skin-url");
+        if (skinInput && window.localStorage) {
+            const savedUrl = window.localStorage.getItem("skin-url");
+            if (savedUrl) {
+                skinInput.value = savedUrl;
+                customSkinUrl = savedUrl;
+            }
+        }
     });
     function hideOverlay() {
         overlayShown = 0;
@@ -1085,6 +1097,17 @@
             } else this.name = value;
         }
         setSkin(value) {
+            // If a custom skin URL is set, use it
+            if (customSkinUrl) {
+                this.skin = customSkinUrl;
+                if (!loadedSkins[this.skin]) {
+                    loadedSkins[this.skin] = new Image();
+                    loadedSkins[this.skin].crossOrigin = "anonymous"; // Allow CORS images
+                    loadedSkins[this.skin].src = this.skin;
+                }
+                return;
+            }
+            // Original logic for named skins
             this.skin = (value && value[0] === "%" ? value.slice(1) : value) || this.skin;
             if (this.skin == null || loadedSkins[this.skin]) return;
             loadedSkins[this.skin] = new Image();
@@ -1166,7 +1189,7 @@
         for (let i in cachedNames) {
             for (let j in cachedNames[i])
                 if (syncAppStamp - cachedNames[i][j].accessTime >= 5000) delete cachedNames[i][j];
-            if (Object.keys(cachedNames[i]).length === 0) delete cachedNames[i];
+            if (cachedNames[i] === {}) delete cachedNames[i];
         }
         for (let i in cachedMass)
             if (syncAppStamp - cachedMass[i].accessTime >= 5000) delete cachedMass[i];
@@ -1520,13 +1543,6 @@
             isTyping = 1;
             drawChat();
         };
-        chatBox.onkeydown = function (e) {
-            if (e.keyCode === 13 && this.value.length > 0) { // Detect Enter key
-                const msg = this.value.trim(); // Get the message
-                this.value = ''; // Clear the input box
-                sendChat(msg); // Send the chat message
-            }
-        };
         mainCanvas.onmousemove = function(event) {
             mouse.x = event.clientX;
             mouse.y = event.clientY;
@@ -1623,53 +1639,15 @@
         });
     };
     wHandle.play = function(arg) {
+        // Get the skin URL from the input field
+        const skinInput = document.getElementById("skin-url");
+        customSkinUrl = skinInput && skinInput.value ? skinInput.value.trim() : null;
+        // Save to localStorage for persistence
+        if (window.localStorage && skinInput) {
+            window.localStorage.setItem("skin-url", customSkinUrl || "");
+        }
         sendPlay(arg);
         hideOverlay();
     };
     wHandle.onload = init;
-
-    window.connectToMultiOgar = ({ nick, skin, server }) => {
-        if (typeof wsInit === 'function') {
-            wsInit(server);
-
-            setTimeout(() => {
-                if (typeof setNick === 'function') {
-                    const writer = new Writer(true);
-                    writer.setUint8(0); // Spawn opcode
-                    writer.setStringUTF8(nick);
-                    writer.setStringUTF8(skin);
-                    wsSend(writer);
-                }
-            }, 1000); // Give it 1s to connect
-        } else {
-            alert('Game engine not loaded!');
-        }
-    };
-
-    // ✅ Only expose if defined to avoid errors
-    if (typeof wsInit !== 'undefined') window.wsInit = wsInit;
-    if (typeof wsSend !== 'undefined') window.wsSend = wsSend;
-    if (typeof Writer !== 'undefined') window.Writer = Writer;
-    if (typeof gameLoop !== 'undefined') window.gameLoop = gameLoop;
-
-    // ✅ Bind input handling if defined
-    if (typeof keyDown !== 'undefined') {
-        window.keyDown = keyDown;
-        window.addEventListener("keydown", keyDown);
-    }
-    if (typeof keyUp !== 'undefined') {
-        window.keyUp = keyUp;
-        window.addEventListener("keyup", keyUp);
-    }
-
-    // ✅ Handle death - show your UI
-    if (typeof gameReset !== 'undefined') {
-        const originalReset = gameReset;
-        window.gameReset = function () {
-            originalReset?.();
-            const menu = document.getElementById('main-menu');
-            if (menu) menu.style.display = 'block';
-        };
-    }
 })(window, window.jQuery);
-
